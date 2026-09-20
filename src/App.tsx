@@ -11,6 +11,7 @@ import { PYQYearView } from './components/PYQYearView';
 import { PYQSubjectView } from './components/PYQSubjectView';
 import { PYQPaperView } from './components/PYQPaperView';
 import { LearnEnglishView } from './components/LearnEnglishView';
+import { OxfordTranslationView } from './components/OxfordTranslationView';
 import { SearchModal } from './components/SearchModal';
 
 export default function App() {
@@ -18,17 +19,29 @@ export default function App() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [language, setLanguage] = useState<AppLanguage>(() => {
     try {
-      const saved = localStorage.getItem('app_language');
-      return saved === 'en' ? 'en' : 'hi';
+      // Clear legacy storage that forced Hindi by default
+      localStorage.removeItem('app_language');
+      const sessionSaved = sessionStorage.getItem('app_session_language');
+      return sessionSaved === 'hi' ? 'hi' : 'en';
     } catch {
-      return 'hi';
+      return 'en';
     }
   });
+
+  // Ensure any dark class and legacy theme mood are cleared
+  useEffect(() => {
+    try {
+      localStorage.removeItem('app_theme_mood');
+      document.documentElement.classList.remove('dark');
+    } catch {
+      // safe fallback
+    }
+  }, []);
 
   const handleToggleLanguage = (newLang: AppLanguage) => {
     setLanguage(newLang);
     try {
-      localStorage.setItem('app_language', newLang);
+      sessionStorage.setItem('app_session_language', newLang);
     } catch (e) {
       // safe fallback
     }
@@ -73,6 +86,9 @@ export default function App() {
       case 'learn-english':
         setViewMode({ type: 'home' });
         break;
+      case 'oxford-translation':
+        setViewMode({ type: 'home' });
+        break;
       default:
         setViewMode({ type: 'home' });
         break;
@@ -105,8 +121,8 @@ export default function App() {
     switch (viewMode.type) {
       case 'home':
         return {
-          title: isHi ? 'कॉमर्स पॉइंट (Commerce Point)' : 'Commerce Point',
-          subtitle: isHi ? 'BSEB 12वीं प्रामाणिक प्रश्न बैंक (2010–2026) एवं अध्ययन सामग्री' : 'BSEB 12th Authentic Question Bank & Study'
+          title: isHi ? 'गुरुकुल राजेश सर (Gurukul Rajesh Sir)' : 'Gurukul Rajesh Sir',
+          subtitle: ''
         };
       case 'subjects':
         return {
@@ -141,11 +157,16 @@ export default function App() {
       case 'learn-english':
         return {
           title: 'Learn English & Spoken',
-          subtitle: isHi ? 'गहन शिक्षण, ऑडियो उच्चारण (🔊), नियम, शब्दावली व संवाद' : 'Deep English Learning & Authentic Pronunciation'
+          subtitle: isHi ? 'गहन शिक्षण, ऑडियो उच्चारण (🔊), 10 अध्याय व 100 पाठ' : 'Deep English Learning & Authentic Pronunciation'
+        };
+      case 'oxford-translation':
+        return {
+          title: isHi ? 'ऑक्सफोर्ड करंट इंग्लिश ट्रांसलेशन' : 'Oxford Current English Translation',
+          subtitle: isHi ? 'सभी 23 अध्याय (Ch 1 से 23) • नियम, अभ्यास एवं शब्दावली' : 'All 23 Chapters (Ch 1 to 23) • Rules, Exercises & Vocabulary'
         };
       default:
         return {
-          title: isHi ? 'कॉमर्स पॉइंट (Commerce Point)' : 'Commerce Point',
+          title: isHi ? 'गुरुकुल राजेश सर (Gurukul Rajesh Sir)' : 'Gurukul Rajesh Sir',
           subtitle: 'BSEB Class 12'
         };
     }
@@ -175,6 +196,7 @@ export default function App() {
             onSelectSubjects={() => setViewMode({ type: 'subjects' })}
             onSelectPYQ={() => setViewMode({ type: 'pyq-years' })}
             onSelectEnglish={() => setViewMode({ type: 'learn-english' })}
+            onSelectOxford={() => setViewMode({ type: 'oxford-translation' })}
           />
         )}
 
@@ -242,6 +264,16 @@ export default function App() {
           <LearnEnglishView
             language={language}
             initialLessonId={viewMode.lessonId}
+            onBack={handleBack}
+          />
+        )}
+
+        {/* 9. OXFORD CURRENT ENGLISH TRANSLATION */}
+        {viewMode.type === 'oxford-translation' && (
+          <OxfordTranslationView
+            language={language}
+            initialChapterNumber={viewMode.chapterNumber ?? null}
+            initialTab={viewMode.initialTab || 'rules'}
             onBack={handleBack}
           />
         )}

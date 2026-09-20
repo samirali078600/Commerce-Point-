@@ -3,15 +3,18 @@ import { CHAPTERS_1_TO_5 } from './chapters1to5';
 import { CHAPTERS_6_TO_10 } from './chapters6to10';
 import { CHAPTERS_11_TO_16 } from './chapters11to16';
 import { CHAPTERS_17_TO_23 } from './chapters17to23';
+import { expandChaptersToFull20Rules30Exercises30Vocab } from './chapterExpansion';
 
 export * from './types';
 
-export const OXFORD_ALL_CHAPTERS: OxfordChapter[] = [
+const rawChapters: OxfordChapter[] = [
   ...CHAPTERS_1_TO_5,
   ...CHAPTERS_6_TO_10,
   ...CHAPTERS_11_TO_16,
   ...CHAPTERS_17_TO_23
 ];
+
+export const OXFORD_ALL_CHAPTERS: OxfordChapter[] = expandChaptersToFull20Rules30Exercises30Vocab(rawChapters);
 
 export const OXFORD_COURSE_METADATA = {
   title: 'Oxford Current English Translation',

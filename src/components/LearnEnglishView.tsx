@@ -5,9 +5,7 @@ import {
   TOTAL_CHAPTERS,
   TOTAL_LESSONS,
   getLessonById,
-  getAdjacentLessons,
-  CourseChapter,
-  CourseLesson
+  getAdjacentLessons
 } from '../data/englishCourse';
 import {
   ArrowLeft,
@@ -16,7 +14,6 @@ import {
   Circle,
   Volume2,
   VolumeX,
-  Search,
   ChevronRight,
   ChevronLeft,
   Bookmark,
@@ -32,7 +29,13 @@ import {
   RotateCcw,
   Type,
   Layers,
-  ListOrdered
+  BarChart2,
+  X,
+  Play,
+  Trash2,
+  CheckSquare,
+  TrendingUp,
+  Clock
 } from 'lucide-react';
 
 interface LearnEnglishViewProps {
@@ -46,17 +49,28 @@ export const LearnEnglishView: React.FC<LearnEnglishViewProps> = ({
   initialLessonId,
   onBack
 }) => {
-  // Selected state: null means chapter curriculum overview, or a specific lessonId
-  const [selectedLessonId, setSelectedLessonId] = useState<string | null>(initialLessonId || null);
-  // Default to Chapter 1 so Chapter 1 with its 10 lessons in sequence is shown first
-  const [selectedChapterFilter, setSelectedChapterFilter] = useState<number | 'all'>(() => {
+  // Navigation states:
+  // selectedChapterId: null = All 10 Chapters list; number (1-10) = Selected Chapter's 10 Lessons
+  // selectedLessonId: null = Chapter view; string = Lesson Reader view
+  const [selectedChapterId, setSelectedChapterId] = useState<number | null>(() => {
     if (initialLessonId) {
       const found = getLessonById(initialLessonId);
       if (found) return found.chapter.id;
     }
-    return 1;
+    return null; // By default, show ONLY Chapters 1 to 10!
   });
-  const [searchQuery, setSearchQuery] = useState<string>('');
+
+  const [selectedLessonId, setSelectedLessonId] = useState<string | null>(initialLessonId || null);
+
+  // Sync chapter ID if lesson changes
+  useEffect(() => {
+    if (selectedLessonId) {
+      const data = getLessonById(selectedLessonId);
+      if (data) {
+        setSelectedChapterId(data.chapter.id);
+      }
+    }
+  }, [selectedLessonId]);
 
   // Reader Preferences
   const [fontSize, setFontSize] = useState<'normal' | 'medium' | 'large'>('normal');
@@ -177,43 +191,86 @@ export const LearnEnglishView: React.FC<LearnEnglishViewProps> = ({
     }
   };
 
-  // Toggle completion
-  const toggleLessonCompletion = (lessonId: string) => {
-    setCompletedLessons((prev) =>
-      prev.includes(lessonId) ? prev.filter((id) => id !== lessonId) : [...prev, lessonId]
-    );
+  // Toast & Progress Modal state
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [showProgressModal, setShowProgressModal] = useState<boolean>(false);
+  const [progressModalTab, setProgressModalTab] = useState<'chapters' | 'saved' | 'settings'>('chapters');
+  const [expandedChapterId, setExpandedChapterId] = useState<number | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 2500);
   };
 
-  // Toggle bookmark
-  const toggleLessonBookmark = (lessonId: string) => {
-    setBookmarkedLessons((prev) =>
-      prev.includes(lessonId) ? prev.filter((id) => id !== lessonId) : [...prev, lessonId]
-    );
+  // Toggle completion with toast feedback
+  const toggleLessonCompletion = (lessonId: string, silent = false) => {
+    setCompletedLessons((prev) => {
+      const isAlready = prev.includes(lessonId);
+      const next = isAlready ? prev.filter((id) => id !== lessonId) : [...prev, lessonId];
+      if (!silent) {
+        showToast(
+          isAlready
+            ? 'पाठ को अपूर्ण चिह्नित किया गया (Marked as Incomplete)'
+            : 'पाठ सफलतापूर्वक पूरा हुआ! 🎉 (Marked as Completed!)'
+        );
+      }
+      return next;
+    });
   };
 
-  // Filtered lessons for search
-  const searchResults = useMemo(() => {
-    if (!searchQuery.trim()) return null;
-    const q = searchQuery.toLowerCase().trim();
-    const results: { chapter: CourseChapter; lesson: CourseLesson }[] = [];
+  const markChapterCompleted = (chapterId: number) => {
+    const ch = ENGLISH_COURSE_CHAPTERS.find(c => c.id === chapterId);
+    if (!ch) return;
+    const lessonIds = ch.lessons.map(l => l.id);
+    setCompletedLessons(prev => Array.from(new Set([...prev, ...lessonIds])));
+    showToast(`अध्याय ${chapterId} के सभी 10 पाठ पूरे चिह्नित किए गए! 🎉`);
+  };
 
-    for (const ch of ENGLISH_COURSE_CHAPTERS) {
-      for (const l of ch.lessons) {
-        if (
-          l.title.toLowerCase().includes(q) ||
-          l.tagline.toLowerCase().includes(q) ||
-          l.deepExplanation.toLowerCase().includes(q) ||
-          l.wordMeanings.some(
-            (w) => w.word.toLowerCase().includes(q) || w.definition.toLowerCase().includes(q)
-          ) ||
-          l.examples.some((ex) => ex.sentence.toLowerCase().includes(q))
-        ) {
-          results.push({ chapter: ch, lesson: l });
+  const clearChapterProgress = (chapterId: number) => {
+    const ch = ENGLISH_COURSE_CHAPTERS.find(c => c.id === chapterId);
+    if (!ch) return;
+    const lessonIds = new Set(ch.lessons.map(l => l.id));
+    setCompletedLessons(prev => prev.filter(id => !lessonIds.has(id)));
+    showToast(`अध्याय ${chapterId} की प्रगति रीसेट की गई।`);
+  };
+
+  const resetAllProgress = () => {
+    if (window.confirm('क्या आप सचमुच अपनी पूरी प्रगति रीसेट करना चाहते हैं? (Reset all course progress?)')) {
+      setCompletedLessons([]);
+      showToast('आपकी प्रगति रीसेट कर दी गई है।');
+    }
+  };
+
+  const markAllProgress = () => {
+    const allIds: string[] = [];
+    ENGLISH_COURSE_CHAPTERS.forEach(c => c.lessons.forEach(l => allIds.push(l.id)));
+    setCompletedLessons(allIds);
+    showToast('सभी 100 पाठ पूरे चिह्नित किए गए! 🏆');
+  };
+
+  // Find next incomplete lesson for quick resume
+  const nextIncomplete = useMemo(() => {
+    for (const chapter of ENGLISH_COURSE_CHAPTERS) {
+      for (const lesson of chapter.lessons) {
+        if (!completedLessons.includes(lesson.id)) {
+          return { chapter, lesson };
         }
       }
     }
-    return results;
-  }, [searchQuery]);
+    return null;
+  }, [completedLessons]);
+
+  // Toggle bookmark
+  const toggleLessonBookmark = (lessonId: string) => {
+    setBookmarkedLessons((prev) => {
+      const isBookmarked = prev.includes(lessonId);
+      const next = isBookmarked ? prev.filter((id) => id !== lessonId) : [...prev, lessonId];
+      showToast(isBookmarked ? 'बुकमार्क हटाया गया' : 'पाठ बुकमार्क में सहेजा गया! 🔖');
+      return next;
+    });
+  };
 
   const completionPercentage = Math.round((completedLessons.length / TOTAL_LESSONS) * 100);
 
@@ -228,7 +285,7 @@ export const LearnEnglishView: React.FC<LearnEnglishViewProps> = ({
   return (
     <div
       id="learn-english-view"
-      className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col"
+      className="min-h-screen bg-slate-50/50 dark:bg-transparent text-slate-900 dark:text-slate-100 flex flex-col"
     >
       {/* Top Breadcrumb & Control Header */}
       <header className="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
@@ -239,8 +296,8 @@ export const LearnEnglishView: React.FC<LearnEnglishViewProps> = ({
               onClick={() => {
                 if (selectedLessonId) {
                   setSelectedLessonId(null);
-                } else if (selectedChapterFilter !== 'all') {
-                  setSelectedChapterFilter('all');
+                } else if (selectedChapterId !== null) {
+                  setSelectedChapterId(null);
                 } else {
                   onBack();
                 }
@@ -250,9 +307,9 @@ export const LearnEnglishView: React.FC<LearnEnglishViewProps> = ({
               <ArrowLeft className="w-4 h-4" />
               <span>
                 {selectedLessonId
-                  ? `Chapter ${currentData?.chapter.number || ''}`
-                  : selectedChapterFilter !== 'all'
-                  ? 'All Chapters'
+                  ? `Chapter ${currentData?.chapter.number || ''} Lessons`
+                  : selectedChapterId !== null
+                  ? 'All 10 Chapters'
                   : 'Home'}
               </span>
             </button>
@@ -319,13 +376,21 @@ export const LearnEnglishView: React.FC<LearnEnglishViewProps> = ({
               </button>
             )}
 
-            {/* Progress Badge */}
-            <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-300 text-xs font-bold">
-              <Award className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            {/* Interactive Progress Button */}
+            <button
+              id="english-progress-button"
+              onClick={() => setShowProgressModal(true)}
+              className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 text-xs font-bold transition-all shadow-2xs active:scale-95 cursor-pointer"
+              title="कोर्स प्रगति व रिपोर्ट देखें (View Progress Report)"
+            >
+              <Award className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span>
-                {completedLessons.length} / {TOTAL_LESSONS} Completed ({completionPercentage}%)
+                {completedLessons.length}/{TOTAL_LESSONS} ({completionPercentage}%)
               </span>
-            </div>
+              <span className="hidden sm:inline text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-200/60 dark:bg-emerald-900/60 px-1.5 py-0.5 rounded">
+                प्रगति
+              </span>
+            </button>
           </div>
         </div>
       </header>
@@ -333,479 +398,383 @@ export const LearnEnglishView: React.FC<LearnEnglishViewProps> = ({
       {/* Main View Container */}
       <div className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
         {!selectedLessonId ? (
-          /* ========================================================================= */
-          /* 1. CURRICULUM OVERVIEW (ALL 10 CHAPTERS & 100 DEEP LESSONS)               */
-          /* ========================================================================= */
-          <div id="course-curriculum-overview" className="space-y-8 animate-fadeIn">
-            {/* Hero Header Banner */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-900 via-blue-900 to-slate-900 text-white p-6 sm:p-8 lg:p-10 shadow-xl border border-indigo-700/40">
-              <div className="relative z-10 max-w-3xl space-y-4">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-200 text-xs font-semibold uppercase tracking-wider">
-                  <Sparkles className="w-3.5 h-3.5 text-indigo-300" />
-                  <span>Comprehensive English Course</span>
-                </div>
+          selectedChapterId !== null ? (
+            /* ========================================================================= */
+            /* 1. DEDICATED CHAPTER VIEW: LESSONS 1 TO 10 IN ORDER                       */
+            /* ========================================================================= */
+            (() => {
+              const activeChapter =
+                ENGLISH_COURSE_CHAPTERS.find((c) => c.id === selectedChapterId) ||
+                ENGLISH_COURSE_CHAPTERS[0];
 
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white">
-                  Complete English & Spoken English Master Course
-                </h1>
+              const completedInChapter = activeChapter.lessons.filter((l) =>
+                completedLessons.includes(l.id)
+              ).length;
+              const chapterProgress = Math.round(
+                (completedInChapter / activeChapter.lessons.length) * 100
+              );
 
-                <p className="text-sm sm:text-base text-indigo-100/90 leading-relaxed">
-                  Study all 10 comprehensive chapters and 100 deep lessons thoroughly in English.
-                  Every lesson contains detailed conceptual explanations, grammatical formulas,
-                  real-world sentence examples with native audio pronunciation, vocabulary banks,
-                  spoken usage tips, common mistakes, dialogues, and interactive practice quizzes.
-                </p>
-
-                {/* Metrics ribbon */}
-                <div className="pt-2 flex flex-wrap items-center gap-4 sm:gap-6 text-xs sm:text-sm font-semibold text-indigo-200">
-                  <div className="flex items-center gap-2">
-                    <BookOpen className="w-4 h-4 text-amber-400" />
-                    <span>10 Deep Chapters</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Compass className="w-4 h-4 text-emerald-400" />
-                    <span>100 Full Lessons</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Volume2 className="w-4 h-4 text-sky-400" />
-                    <span>Audio Pronunciation</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Award className="w-4 h-4 text-pink-400" />
-                    <span>100% In English</span>
-                  </div>
-                </div>
-
-                {/* Progress bar */}
-                <div className="pt-3 space-y-1.5">
-                  <div className="flex justify-between text-xs font-semibold text-indigo-200">
-                    <span>Course Progress</span>
-                    <span>
-                      {completedLessons.length} of {TOTAL_LESSONS} Lessons Completed ({completionPercentage}%)
+              return (
+                <div id="course-chapter-lessons-view" className="space-y-6 animate-fadeIn">
+                  {/* Top Bar with Back to All Chapters */}
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+                    <button
+                      onClick={() => setSelectedChapterId(null)}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-bold transition-colors cursor-pointer"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                      <span>← सभी 10 अध्याय (Back to All Chapters)</span>
+                    </button>
+                    <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                      Chapter {activeChapter.number} of 10
                     </span>
                   </div>
-                  <div className="w-full h-2.5 bg-indigo-950/60 rounded-full overflow-hidden border border-indigo-800/50">
-                    <div
-                      className="h-full bg-gradient-to-r from-emerald-400 to-teal-400 transition-all duration-500 rounded-full"
-                      style={{ width: `${Math.max(completionPercentage, 1)}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
 
-              {/* Decorative background watermark */}
-              <div className="absolute right-0 bottom-0 translate-x-10 translate-y-10 opacity-10 pointer-events-none">
-                <BookOpen className="w-80 h-80 text-white" />
-              </div>
-            </div>
-
-            {/* Search & Chapter Filter Controls */}
-            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-              {/* Search Bar */}
-              <div className="relative flex-1">
-                <Search className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search lessons, vocabulary words, formulas, or grammar rules..."
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 transition-colors shadow-xs"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-
-              {/* Chapter Navigation Selector Ribbon (Line se 1 to 10) */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-2.5 sm:p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
-                <div className="flex items-center gap-2 px-1 text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  <ListOrdered className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                  <span>Chapters (1 to 10):</span>
-                </div>
-
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 max-w-full text-xs font-bold no-scrollbar">
-                  {ENGLISH_COURSE_CHAPTERS.map((ch) => (
-                    <button
-                      key={ch.id}
-                      onClick={() => setSelectedChapterFilter(ch.id)}
-                      className={`px-3 py-2 rounded-xl transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-                        selectedChapterFilter === ch.id
-                          ? 'bg-indigo-600 text-white shadow-xs scale-105'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                      }`}
-                    >
-                      <span>Chapter {ch.number}</span>
-                      {selectedChapterFilter === ch.id && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse" />
-                      )}
-                    </button>
-                  ))}
-
-                  <div className="h-5 w-px bg-slate-200 dark:bg-slate-700 mx-1 hidden sm:block" />
-
-                  <button
-                    onClick={() => setSelectedChapterFilter('all')}
-                    className={`px-3 py-2 rounded-xl transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-                      selectedChapterFilter === 'all'
-                        ? 'bg-indigo-600 text-white shadow-xs'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                    }`}
-                  >
-                    <Layers className="w-3.5 h-3.5" />
-                    <span>All 10 Chapters</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* If Search is Active */}
-            {searchResults ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                    Search Results ({searchResults.length})
-                  </h2>
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
-                  >
-                    Show All Curriculum
-                  </button>
-                </div>
-
-                {searchResults.length === 0 ? (
-                  <div className="p-8 text-center rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500">
-                    No lessons matched "{searchQuery}". Try searching for terms like "tenses", "passive", "adjective", or "idioms".
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {searchResults.map(({ chapter, lesson }) => (
-                      <div
-                        key={lesson.id}
-                        onClick={() => {
-                          setSelectedChapterFilter(chapter.id);
-                          setSelectedLessonId(lesson.id);
-                        }}
-                        className="p-5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-indigo-500 dark:hover:border-indigo-500 shadow-xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between group"
-                      >
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between text-xs font-semibold text-indigo-600 dark:text-indigo-400">
-                            <span>
-                              Chapter {chapter.number} • Lesson {lesson.lessonNumber}
-                            </span>
-                            {completedLessons.includes(lesson.id) && (
-                              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                                <CheckCircle2 className="w-3.5 h-3.5" />
-                                <span>Completed</span>
-                              </span>
-                            )}
-                          </div>
-                          <h3 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                            {lesson.title}
-                          </h3>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
-                            {lesson.tagline}
-                          </p>
-                        </div>
-                        <div className="pt-4 flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-slate-300">
-                          <span>{lesson.wordMeanings.length} Vocabulary Words</span>
-                          <span className="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 group-hover:translate-x-1 transition-transform">
-                            Study Lesson <ArrowRight className="w-3.5 h-3.5" />
+                  {/* Chapter Focus Header Banner */}
+                  <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-xs space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="px-3 py-1 rounded-lg bg-indigo-600 text-white text-xs font-black uppercase tracking-wider shadow-xs">
+                            Chapter {activeChapter.number} of 10
+                          </span>
+                          <span className="px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 text-xs font-bold">
+                            10 Lessons (Lesson 1 to 10 in Sequence)
                           </span>
                         </div>
+
+                        <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 dark:text-white">
+                          {activeChapter.title}
+                        </h2>
+
+                        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-3xl leading-relaxed">
+                          {activeChapter.description}
+                        </p>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : selectedChapterFilter !== 'all' ? (
-              /* ========================================================================= */
-              /* DEDICATED CHAPTER VIEW: LESSONS 1 TO 10 DISPLAYED LINE BY LINE IN ORDER   */
-              /* ========================================================================= */
-              (() => {
-                const activeChapter =
-                  ENGLISH_COURSE_CHAPTERS.find((c) => c.id === selectedChapterFilter) ||
-                  ENGLISH_COURSE_CHAPTERS[0];
 
-                const completedInChapter = activeChapter.lessons.filter((l) =>
-                  completedLessons.includes(l.id)
-                ).length;
-                const chapterProgress = Math.round(
-                  (completedInChapter / activeChapter.lessons.length) * 100
-                );
-
-                return (
-                  <div className="space-y-6 animate-fadeIn">
-                    {/* Chapter Focus Header Banner */}
-                    <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-xs space-y-5">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800/80 pb-5">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <span className="px-3 py-1 rounded-lg bg-indigo-600 text-white text-xs font-black uppercase tracking-wider shadow-xs">
-                              Chapter {activeChapter.number} of 10
-                            </span>
-                            <span className="px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 text-xs font-bold">
-                              10 Lessons (Lesson 1 to 10 in Sequence)
-                            </span>
+                      {/* Chapter Progress & Actions */}
+                      <div className="sm:text-right space-y-2 shrink-0">
+                        <button
+                          onClick={() => setShowProgressModal(true)}
+                          className="text-left sm:text-right group cursor-pointer block"
+                          title="Click to view full course progress"
+                        >
+                          <div className="text-xs font-bold text-slate-500 dark:text-slate-400 group-hover:text-emerald-600 transition-colors">
+                            Progress: <span className="text-emerald-600 dark:text-emerald-400 font-black">{completedInChapter} / {activeChapter.lessons.length} Done</span> ({chapterProgress}%) ↗
                           </div>
-
-                          <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 dark:text-white">
-                            {activeChapter.title}
-                          </h2>
-
-                          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-3xl leading-relaxed">
-                            {activeChapter.description}
-                          </p>
-                        </div>
-
-                        {/* Chapter Progress */}
-                        <div className="sm:text-right space-y-1.5 shrink-0">
-                          <div className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                            Chapter Progress: <span className="text-emerald-600 dark:text-emerald-400">{completedInChapter} / {activeChapter.lessons.length} Done</span> ({chapterProgress}%)
-                          </div>
-                          <div className="w-44 h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                          <div className="w-44 h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mt-1">
                             <div
                               className="h-full bg-emerald-500 rounded-full transition-all duration-300"
                               style={{ width: `${chapterProgress}%` }}
                             />
                           </div>
-                        </div>
-                      </div>
-
-                      {/* Instruction Strip */}
-                      <div className="flex items-center justify-between text-xs font-bold text-slate-500 dark:text-slate-400 pt-1">
-                        <div className="flex items-center gap-2">
-                          <BookOpen className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                          <span>Lessons 1 to 10 are listed below in sequential order. Click any lesson to open full lesson-wise content:</span>
-                        </div>
-                        <button
-                          onClick={() => setSelectedChapterFilter('all')}
-                          className="text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer hidden md:inline-block"
-                        >
-                          View All 10 Chapters
                         </button>
+
+                        <div className="flex items-center gap-2 justify-start sm:justify-end">
+                          <button
+                            onClick={() => markChapterCompleted(activeChapter.id)}
+                            className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800 cursor-pointer"
+                            title="Mark all 10 lessons completed"
+                          >
+                            ✓ Mark All 10 Done
+                          </button>
+                        </div>
                       </div>
                     </div>
+                  </div>
 
-                    {/* Sequential Lessons List (Line se 1 to 10 tak) */}
-                    <div className="space-y-3.5">
-                      {activeChapter.lessons.map((lesson) => {
-                        const isCompleted = completedLessons.includes(lesson.id);
-                        const isBookmarked = bookmarkedLessons.includes(lesson.id);
-                        const lessonPadded =
-                          lesson.lessonNumber < 10 ? `0${lesson.lessonNumber}` : `${lesson.lessonNumber}`;
+                  {/* Sequential Lessons List (1 to 10 in Order) */}
+                  <div className="space-y-3.5">
+                    {activeChapter.lessons.map((lesson) => {
+                      const isCompleted = completedLessons.includes(lesson.id);
+                      const isBookmarked = bookmarkedLessons.includes(lesson.id);
+                      const lessonPadded =
+                        lesson.lessonNumber < 10 ? `0${lesson.lessonNumber}` : `${lesson.lessonNumber}`;
 
-                        return (
-                          <div
-                            key={lesson.id}
-                            id={`lesson-card-${lesson.id}`}
-                            onClick={() => setSelectedLessonId(lesson.id)}
-                            className={`p-5 sm:p-6 rounded-2xl border transition-all cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4 group ${
-                              isCompleted
-                                ? 'bg-emerald-50/40 dark:bg-emerald-950/15 border-emerald-300 dark:border-emerald-800/60 hover:border-emerald-500'
-                                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-indigo-500 hover:shadow-md'
-                            }`}
-                          >
-                            <div className="flex items-start gap-4 sm:gap-5 flex-1">
-                              {/* Big numbered step badge (01, 02, ... 10) */}
-                              <div
-                                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center font-black text-lg sm:text-xl shrink-0 transition-transform group-hover:scale-105 ${
-                                  isCompleted
-                                    ? 'bg-emerald-500 text-white shadow-xs'
-                                    : 'bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/80'
-                                }`}
-                              >
-                                {lessonPadded}
-                              </div>
-
-                              <div className="space-y-1.5 flex-1">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <span className="text-xs font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-                                    Lesson {lesson.lessonNumber} of 10
-                                  </span>
-                                  {isBookmarked && (
-                                    <span className="flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-md">
-                                      <BookmarkCheck className="w-3 h-3" /> Saved
-                                    </span>
-                                  )}
-                                  {isCompleted ? (
-                                    <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-md">
-                                      <CheckCircle2 className="w-3 h-3" /> Completed
-                                    </span>
-                                  ) : (
-                                    <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500">
-                                      • Ready to study
-                                    </span>
-                                  )}
-                                </div>
-
-                                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                                  {lesson.title}
-                                </h3>
-
-                                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed max-w-3xl">
-                                  {lesson.tagline}
-                                </p>
-
-                                {/* Features Pills */}
-                                <div className="pt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
-                                  <span className="inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md">
-                                    <Type className="w-3 h-3 text-indigo-500" />
-                                    {lesson.wordMeanings.length} Vocabulary Words
-                                  </span>
-                                  <span className="inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md">
-                                    <Volume2 className="w-3 h-3 text-sky-500" />
-                                    Native Audio 🔊
-                                  </span>
-                                  <span className="inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md">
-                                    <HelpCircle className="w-3 h-3 text-amber-500" />
-                                    Practice Quiz
-                                  </span>
-                                  <span className="inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md">
-                                    <Sparkles className="w-3 h-3 text-purple-500" />
-                                    Master Formula
-                                  </span>
-                                </div>
-                              </div>
+                      return (
+                        <div
+                          key={lesson.id}
+                          id={`lesson-card-${lesson.id}`}
+                          onClick={() => setSelectedLessonId(lesson.id)}
+                          className={`p-5 sm:p-6 rounded-2xl border transition-all cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4 group ${
+                            isCompleted
+                              ? 'bg-emerald-50/40 dark:bg-emerald-950/15 border-emerald-300 dark:border-emerald-800/60 hover:border-emerald-500'
+                              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-indigo-500 hover:shadow-md'
+                          }`}
+                        >
+                          <div className="flex items-start gap-4 sm:gap-5 flex-1">
+                            <div
+                              className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center font-black text-lg sm:text-xl shrink-0 transition-transform group-hover:scale-105 ${
+                                isCompleted
+                                  ? 'bg-emerald-500 text-white shadow-xs'
+                                  : 'bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/80'
+                              }`}
+                            >
+                              {lessonPadded}
                             </div>
 
-                            {/* Call to action button */}
-                            <div className="shrink-0 flex items-center justify-end pt-3 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-slate-800">
-                              <span className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-bold shadow-xs transition-all group-hover:translate-x-0.5 cursor-pointer">
-                                <span>Study Lesson {lesson.lessonNumber}</span>
-                                <ArrowRight className="w-4 h-4" />
-                              </span>
+                            <div className="space-y-1.5 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="text-xs font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                                  Lesson {lesson.lessonNumber} of 10
+                                </span>
+                                {isBookmarked && (
+                                  <span className="flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-md">
+                                    <BookmarkCheck className="w-3 h-3" /> Saved
+                                  </span>
+                                )}
+                                {isCompleted ? (
+                                  <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-md">
+                                    <CheckCircle2 className="w-3 h-3" /> Completed
+                                  </span>
+                                ) : (
+                                  <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500">
+                                    • Ready to study
+                                  </span>
+                                )}
+                              </div>
+
+                              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                                {lesson.title}
+                              </h3>
+
+                              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed max-w-3xl">
+                                {lesson.tagline}
+                              </p>
+
+                              {/* Features Pills */}
+                              <div className="pt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                <span className="inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md">
+                                  <Type className="w-3 h-3 text-indigo-500" />
+                                  {lesson.wordMeanings.length} Vocabulary Words
+                                </span>
+                                <span className="inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md">
+                                  <Volume2 className="w-3 h-3 text-sky-500" />
+                                  Native Audio 🔊
+                                </span>
+                                <span className="inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md">
+                                  <HelpCircle className="w-3 h-3 text-amber-500" />
+                                  Practice Quiz
+                                </span>
+                                <span className="inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md">
+                                  <Sparkles className="w-3 h-3 text-purple-500" />
+                                  Master Formula
+                                </span>
+                              </div>
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
 
-                    {/* Chapter Bottom Navigation */}
-                    <div className="pt-6 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4">
-                      {activeChapter.id > 1 ? (
-                        <button
-                          onClick={() => setSelectedChapterFilter(activeChapter.id - 1)}
-                          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-bold hover:border-indigo-500 hover:text-indigo-600 transition-colors shadow-xs cursor-pointer"
-                        >
-                          <ChevronLeft className="w-4 h-4" />
-                          <span>Chapter {activeChapter.number - 1}</span>
-                        </button>
-                      ) : (
-                        <div />
-                      )}
+                          <div className="shrink-0 flex items-center justify-end gap-2 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-slate-800">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleLessonCompletion(lesson.id);
+                              }}
+                              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                                isCompleted
+                                  ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-200'
+                                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300'
+                              }`}
+                              title={isCompleted ? 'अपूर्ण चिह्नित करें (Mark Incomplete)' : 'पूर्ण चिह्नित करें (Mark Complete)'}
+                            >
+                              <CheckCircle2 className={`w-3.5 h-3.5 ${isCompleted ? 'text-emerald-600' : 'text-slate-400'}`} />
+                              <span>{isCompleted ? 'Done ✓' : 'Mark Done'}</span>
+                            </button>
 
+                            <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-bold shadow-xs transition-all group-hover:translate-x-0.5 cursor-pointer">
+                              <span>Study</span>
+                              <ArrowRight className="w-4 h-4" />
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Chapter Bottom Navigation */}
+                  <div className="pt-6 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4">
+                    {activeChapter.id > 1 ? (
                       <button
-                        onClick={() => setSelectedChapterFilter('all')}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-bold transition-colors cursor-pointer"
+                        onClick={() => setSelectedChapterId(activeChapter.id - 1)}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-bold hover:border-indigo-500 hover:text-indigo-600 transition-colors shadow-xs cursor-pointer"
                       >
-                        <Layers className="w-4 h-4" />
-                        <span>All 10 Chapters Directory</span>
+                        <ChevronLeft className="w-4 h-4" />
+                        <span>Chapter {activeChapter.number - 1}</span>
                       </button>
+                    ) : (
+                      <div />
+                    )}
 
-                      {activeChapter.id < 10 ? (
-                        <button
-                          onClick={() => setSelectedChapterFilter(activeChapter.id + 1)}
-                          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-bold transition-colors shadow-xs cursor-pointer"
-                        >
-                          <span>Chapter {activeChapter.number + 1}</span>
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
-                      ) : (
-                        <div />
-                      )}
-                    </div>
+                    <button
+                      onClick={() => setSelectedChapterId(null)}
+                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-bold transition-colors cursor-pointer"
+                    >
+                      <Layers className="w-4 h-4" />
+                      <span>All 10 Chapters Directory</span>
+                    </button>
+
+                    {activeChapter.id < 10 ? (
+                      <button
+                        onClick={() => setSelectedChapterId(activeChapter.id + 1)}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-bold transition-colors shadow-xs cursor-pointer"
+                      >
+                        <span>Chapter {activeChapter.number + 1}</span>
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    ) : (
+                      <div />
+                    )}
                   </div>
-                );
-              })()
-            ) : (
-              /* ========================================================================= */
-              /* ALL 10 CHAPTERS OVERVIEW DIRECTORY (1 TO 10 IN A LINE)                    */
-              /* ========================================================================= */
-              <div className="space-y-6 animate-fadeIn">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-                      All 10 Chapters Directory
-                    </h2>
-                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                      Select any chapter to view its 10 lessons listed line by line in sequence:
-                    </p>
-                  </div>
-                  <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
-                    100 Lessons Total
+                </div>
+              );
+            })()
+          ) : (
+            /* ========================================================================= */
+            /* 2. ONLY CHAPTERS 1 TO 10 DIRECTORY (CLEAN & DIRECT)                        */
+            /* ========================================================================= */
+            <div id="course-chapters-directory" className="space-y-6 animate-fadeIn">
+              {/* Clean Title Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+                <div className="space-y-1">
+                  <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                    Learn English & Spoken
+                  </h1>
+                  <p className="text-sm text-slate-600 dark:text-slate-300">
+                    अध्याय 1 से 10 तक • किसी भी अध्याय पर क्लिक करके उसके 10 पाठ (Lessons) खोलें:
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="px-3.5 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 text-xs font-bold shadow-2xs">
+                    10 Chapters • 100 Lessons
                   </span>
                 </div>
+              </div>
 
-                <div className="space-y-4">
-                  {ENGLISH_COURSE_CHAPTERS.map((chapter) => {
-                    const completedInChapter = chapter.lessons.filter((l) =>
-                      completedLessons.includes(l.id)
-                    ).length;
-                    const chapterProgress = Math.round(
-                      (completedInChapter / chapter.lessons.length) * 100
-                    );
+              {/* Interactive Course Progress & Study Tracker Card */}
+              <div
+                id="english-course-progress-card"
+                className="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-emerald-50 via-white to-teal-50/60 dark:from-emerald-950/30 dark:via-slate-900 dark:to-slate-900 border-2 border-emerald-300 dark:border-emerald-800 shadow-xs transition-all"
+              >
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+                  <div className="space-y-2 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="p-1.5 rounded-lg bg-emerald-600 text-white shadow-2xs">
+                        <Award className="w-4 h-4" />
+                      </span>
+                      <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+                        आपकी अध्ययन प्रगति (Your Study Progress)
+                      </h2>
+                      <span className="px-2.5 py-0.5 rounded-md bg-emerald-200/80 dark:bg-emerald-900/60 text-emerald-900 dark:text-emerald-200 text-xs font-black">
+                        {completionPercentage}% Complete
+                      </span>
+                    </div>
 
-                    return (
-                      <div
-                        key={chapter.id}
-                        id={`chapter-card-${chapter.id}`}
-                        onClick={() => setSelectedChapterFilter(chapter.id)}
-                        className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-indigo-500 p-5 sm:p-6 shadow-xs hover:shadow-md transition-all cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-5 group"
-                      >
-                        <div className="flex items-start gap-4 sm:gap-5 flex-1">
-                          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/80 flex items-center justify-center font-black text-lg sm:text-xl shrink-0 group-hover:scale-105 transition-transform">
-                            {chapter.number < 10 ? `0${chapter.number}` : chapter.number}
-                          </div>
-
-                          <div className="space-y-1.5 flex-1">
-                            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-                              <span>Chapter {chapter.number}</span>
-                              <span>•</span>
-                              <span>10 Lessons in Sequence</span>
-                            </div>
-
-                            <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                              {chapter.title}
-                            </h3>
-
-                            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl">
-                              {chapter.description}
-                            </p>
-
-                            <div className="pt-2 flex items-center gap-4 text-xs font-semibold text-slate-500 dark:text-slate-400">
-                              <span>{completedInChapter} / {chapter.lessons.length} Completed</span>
-                              <div className="w-28 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-emerald-500 rounded-full transition-all"
-                                  style={{ width: `${chapterProgress}%` }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="shrink-0 flex items-center justify-end pt-3 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-slate-800">
-                          <span className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-bold shadow-xs transition-all group-hover:translate-x-0.5 cursor-pointer">
-                            <span>Open Lessons (1 to 10)</span>
-                            <ArrowRight className="w-4 h-4" />
-                          </span>
-                        </div>
+                    {/* Progress bar */}
+                    <div className="space-y-1.5">
+                      <div className="w-full h-3 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-500"
+                          style={{ width: `${completionPercentage}%` }}
+                        />
                       </div>
-                    );
-                  })}
+                      <div className="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400">
+                        <span>{completedLessons.length} / {TOTAL_LESSONS} पाठ पूरे हुए (Completed)</span>
+                        <span>{TOTAL_LESSONS - completedLessons.length} पाठ बाकी (Remaining)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                    {nextIncomplete && (
+                      <button
+                        onClick={() => {
+                          setSelectedChapterId(nextIncomplete.chapter.id);
+                          setSelectedLessonId(nextIncomplete.lesson.id);
+                        }}
+                        className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95"
+                      >
+                        <Play className="w-4 h-4 fill-white" />
+                        <span>अध्ययन जारी रखें (Ch {nextIncomplete.chapter.number} L{nextIncomplete.lesson.lessonNumber})</span>
+                      </button>
+                    )}
+                    <button
+                      id="view-detailed-progress-btn"
+                      onClick={() => setShowProgressModal(true)}
+                      className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95"
+                    >
+                      <BarChart2 className="w-4 h-4" />
+                      <span>📊 पूरी प्रगति रिपोर्ट देखें</span>
+                    </button>
+                  </div>
                 </div>
               </div>
-            )}
-          </div>
+
+              {/* List of Chapters 1 to 10 */}
+              <div className="space-y-4">
+                {ENGLISH_COURSE_CHAPTERS.map((chapter) => {
+                  const completedInChapter = chapter.lessons.filter((l) =>
+                    completedLessons.includes(l.id)
+                  ).length;
+                  const chapterProgress = Math.round(
+                    (completedInChapter / chapter.lessons.length) * 100
+                  );
+
+                  return (
+                    <div
+                      key={chapter.id}
+                      id={`chapter-card-${chapter.id}`}
+                      onClick={() => setSelectedChapterId(chapter.id)}
+                      className="rounded-2xl bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 hover:border-indigo-600 dark:hover:border-indigo-500 hover:shadow-md p-5 sm:p-6 transition-all duration-200 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-5 group"
+                    >
+                      <div className="flex items-start gap-4 sm:gap-5 flex-1">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-black text-lg sm:text-xl shrink-0 group-hover:scale-105 transition-transform shadow-xs">
+                          {chapter.number < 10 ? `0${chapter.number}` : chapter.number}
+                        </div>
+
+                        <div className="space-y-1.5 flex-1">
+                          <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                            <span>Chapter {chapter.number} of 10</span>
+                            <span>•</span>
+                            <span>10 Lessons in Sequence</span>
+                          </div>
+
+                          <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                            {chapter.title}
+                          </h2>
+
+                          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl">
+                            {chapter.description}
+                          </p>
+
+                          <div className="pt-2 flex items-center gap-4 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                            <span>{completedInChapter} / {chapter.lessons.length} Completed</span>
+                            <div className="w-28 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-emerald-500 rounded-full transition-all"
+                                style={{ width: `${chapterProgress}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="shrink-0 flex items-center justify-end pt-3 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-slate-800">
+                        <span className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-indigo-600 group-hover:bg-indigo-700 text-white text-xs sm:text-sm font-bold shadow-xs transition-all group-hover:translate-x-0.5 cursor-pointer">
+                          <span>Open Chapter (10 Lessons)</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )
         ) : (
           /* ========================================================================= */
-          /* 2. DEEP BOOK-STYLE LESSON READER (LESSON-WISE FULL CONTENT)               */
+          /* 3. DEEP BOOK-STYLE LESSON READER (LESSON-WISE FULL CONTENT)               */
           /* ========================================================================= */
           currentData && (
             <article
@@ -816,7 +785,7 @@ export const LearnEnglishView: React.FC<LearnEnglishViewProps> = ({
               <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-200 dark:border-slate-800">
                 <button
                   onClick={() => {
-                    setSelectedChapterFilter(currentData.chapter.id);
+                    setSelectedChapterId(currentData.chapter.id);
                     setSelectedLessonId(null);
                   }}
                   className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
@@ -1260,11 +1229,30 @@ export const LearnEnglishView: React.FC<LearnEnglishViewProps> = ({
                     </div>
 
                     {isQuizSubmitted && (
-                      <div className="p-4 rounded-xl bg-slate-100 dark:bg-slate-800/70 text-xs sm:text-sm space-y-1 animate-fadeIn">
-                        <span className="font-bold text-indigo-600 dark:text-indigo-400">
-                          Explanation:{" "}
-                        </span>
-                        <p className="text-slate-700 dark:text-slate-300">{q.explanation}</p>
+                      <div className="p-4 rounded-xl bg-slate-100 dark:bg-slate-800/70 text-xs sm:text-sm space-y-3 animate-fadeIn">
+                        {selectedQuizOption === q.answer ? (
+                          <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200">
+                            <span className="font-bold flex items-center gap-1.5">
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                              🎉 सही उत्तर! (Correct Answer!)
+                            </span>
+                            {!completedLessons.includes(currentData.lesson.id) && (
+                              <button
+                                onClick={() => toggleLessonCompletion(currentData.lesson.id)}
+                                className="px-3 py-1 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors shadow-xs cursor-pointer"
+                              >
+                                ✓ पाठ को पूरा मार्क करें (Mark Done)
+                              </button>
+                            )}
+                          </div>
+                        ) : null}
+
+                        <div>
+                          <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                            Explanation:{" "}
+                          </span>
+                          <p className="text-slate-700 dark:text-slate-300">{q.explanation}</p>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -1288,6 +1276,45 @@ export const LearnEnglishView: React.FC<LearnEnglishViewProps> = ({
                 </ul>
               </section>
 
+              {/* Bottom Completion Banner & Next/Prev Controls */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold ${
+                    completedLessons.includes(currentData.lesson.id)
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                  }`}>
+                    <CheckCircle2 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                      {completedLessons.includes(currentData.lesson.id)
+                        ? 'यह पाठ पूरा हो चुका है (Lesson Completed)'
+                        : 'क्या आपने इस पाठ का अध्ययन पूरा कर लिया है?'}
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      प्रगति रिकॉर्ड अपडेट करने के लिए पूर्ण चिह्नित करें।
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => toggleLessonCompletion(currentData.lesson.id)}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shrink-0 ${
+                    completedLessons.includes(currentData.lesson.id)
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs'
+                  }`}
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>
+                    {completedLessons.includes(currentData.lesson.id)
+                      ? 'पूरा हुआ ✓ (Completed)'
+                      : 'पाठ को पूर्ण चिह्नित करें (Mark as Done)'}
+                  </span>
+                </button>
+              </div>
+
               {/* Bottom Navigation (Prev / Next Lesson) */}
               <div className="pt-6 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
                 {adjacentData.prevLesson ? (
@@ -1307,11 +1334,16 @@ export const LearnEnglishView: React.FC<LearnEnglishViewProps> = ({
 
                 {adjacentData.nextLesson ? (
                   <button
-                    onClick={() => setSelectedLessonId(adjacentData.nextLesson!.lesson.id)}
+                    onClick={() => {
+                      if (!completedLessons.includes(currentData.lesson.id)) {
+                        toggleLessonCompletion(currentData.lesson.id, true);
+                      }
+                      setSelectedLessonId(adjacentData.nextLesson!.lesson.id);
+                    }}
                     className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-bold transition-colors shadow-xs cursor-pointer"
                   >
                     <div className="text-right">
-                      <span className="block text-[10px] text-indigo-200">Next Lesson</span>
+                      <span className="block text-[10px] text-indigo-200">Next Lesson (Auto-Completes Current)</span>
                       <span>{adjacentData.nextLesson.lesson.title}</span>
                     </div>
                     <ChevronRight className="w-4 h-4" />
@@ -1330,6 +1362,361 @@ export const LearnEnglishView: React.FC<LearnEnglishViewProps> = ({
           )
         )}
       </div>
+
+      {/* ========================================================================= */}
+      {/* PROGRESS TRACKER & STUDY REPORT MODAL                                     */}
+      {/* ========================================================================= */}
+      {showProgressModal && (
+        <div
+          id="english-progress-modal"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/60 backdrop-blur-xs animate-fadeIn"
+          onClick={() => setShowProgressModal(false)}
+        >
+          <div
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-scaleUp"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="p-4 sm:p-6 bg-gradient-to-r from-emerald-600 to-teal-700 text-white flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                  <Award className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg sm:text-xl font-black">
+                    Course Progress & Study Report
+                  </h3>
+                  <p className="text-xs text-emerald-100 font-medium">
+                    गुरुकुल अंग्रेजी व स्पोकन अध्ययन प्रगति रिपोर्ट
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowProgressModal(false)}
+                className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors text-white cursor-pointer"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Overall Metric Strip */}
+            <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center">
+                <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400">
+                  {completionPercentage}%
+                </div>
+                <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                  कुल प्रगति (Overall)
+                </div>
+              </div>
+              <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center">
+                <div className="text-xl sm:text-2xl font-black text-indigo-600 dark:text-indigo-400">
+                  {completedLessons.length}
+                </div>
+                <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                  पूरे हुए पाठ ({TOTAL_LESSONS} में से)
+                </div>
+              </div>
+              <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center">
+                <div className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400">
+                  {bookmarkedLessons.length}
+                </div>
+                <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                  सहेजे गए पाठ (Bookmarks)
+                </div>
+              </div>
+              <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center">
+                <div className="text-xl sm:text-2xl font-black text-slate-700 dark:text-slate-300">
+                  {TOTAL_LESSONS - completedLessons.length}
+                </div>
+                <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                  शेष पाठ (Remaining)
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Tabs */}
+            <div className="flex border-b border-slate-200 dark:border-slate-800 px-4 pt-2 bg-white dark:bg-slate-900">
+              <button
+                onClick={() => setProgressModalTab('chapters')}
+                className={`px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer ${
+                  progressModalTab === 'chapters'
+                    ? 'border-emerald-600 text-emerald-600 dark:text-emerald-400'
+                    : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'
+                }`}
+              >
+                अध्यायवार रिपोर्ट (By Chapters)
+              </button>
+              <button
+                onClick={() => setProgressModalTab('saved')}
+                className={`px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer ${
+                  progressModalTab === 'saved'
+                    ? 'border-emerald-600 text-emerald-600 dark:text-emerald-400'
+                    : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'
+                }`}
+              >
+                बुकमार्क पाठ ({bookmarkedLessons.length})
+              </button>
+              <button
+                onClick={() => setProgressModalTab('settings')}
+                className={`px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer ${
+                  progressModalTab === 'settings'
+                    ? 'border-emerald-600 text-emerald-600 dark:text-emerald-400'
+                    : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'
+                }`}
+              >
+                प्रगति सेटिंग्स (Actions)
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
+              {progressModalTab === 'chapters' && (
+                <div className="space-y-3">
+                  {ENGLISH_COURSE_CHAPTERS.map((ch) => {
+                    const compCount = ch.lessons.filter(l => completedLessons.includes(l.id)).length;
+                    const pct = Math.round((compCount / ch.lessons.length) * 100);
+                    const isExpanded = expandedChapterId === ch.id;
+
+                    return (
+                      <div
+                        key={ch.id}
+                        className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-slate-50/50 dark:bg-slate-950/40"
+                      >
+                        <div
+                          onClick={() => setExpandedChapterId(isExpanded ? null : ch.id)}
+                          className="p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                              {ch.number}
+                            </span>
+                            <div>
+                              <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                                {ch.title}
+                              </h4>
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                                {compCount} / {ch.lessons.length} पाठ पूरे हुए • {pct}%
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3 self-end sm:self-center">
+                            <div className="w-24 sm:w-32 h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-emerald-500 rounded-full"
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                            <span className="text-xs font-bold text-slate-400">
+                              {isExpanded ? '▲' : '▼'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Expanded Chapter Lessons with Direct Toggle */}
+                        {isExpanded && (
+                          <div className="p-3 sm:p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 space-y-2">
+                            <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-slate-800 text-xs">
+                              <span className="font-bold text-slate-600 dark:text-slate-400">
+                                पाठ की सूची (10 Lessons):
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    markChapterCompleted(ch.id);
+                                  }}
+                                  className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+                                >
+                                  ✓ सब पूरा करें (Mark All)
+                                </button>
+                                <span>•</span>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    clearChapterProgress(ch.id);
+                                  }}
+                                  className="text-[11px] font-bold text-red-500 dark:text-red-400 hover:underline cursor-pointer"
+                                >
+                                  रीसेट करें (Clear)
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              {ch.lessons.map((lesson) => {
+                                const isDone = completedLessons.includes(lesson.id);
+                                return (
+                                  <div
+                                    key={lesson.id}
+                                    className={`p-2.5 rounded-xl border flex items-center justify-between gap-2 text-xs transition-all ${
+                                      isDone
+                                        ? 'bg-emerald-50/50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200'
+                                        : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+                                    }`}
+                                  >
+                                    <button
+                                      onClick={() => toggleLessonCompletion(lesson.id)}
+                                      className="flex items-center gap-2 flex-1 text-left cursor-pointer"
+                                    >
+                                      <CheckCircle2
+                                        className={`w-4 h-4 shrink-0 ${
+                                          isDone
+                                            ? 'text-emerald-600 fill-emerald-100 dark:fill-emerald-950'
+                                            : 'text-slate-400'
+                                        }`}
+                                      />
+                                      <span className="font-medium truncate">
+                                        L{lesson.lessonNumber}: {lesson.title}
+                                      </span>
+                                    </button>
+
+                                    <button
+                                      onClick={() => {
+                                        setSelectedChapterId(ch.id);
+                                        setSelectedLessonId(lesson.id);
+                                        setShowProgressModal(false);
+                                      }}
+                                      className="px-2 py-0.5 rounded bg-indigo-600 text-white font-bold text-[10px] hover:bg-indigo-700 shrink-0 cursor-pointer"
+                                    >
+                                      पढ़ें →
+                                    </button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {progressModalTab === 'saved' && (
+                <div className="space-y-3">
+                  {bookmarkedLessons.length === 0 ? (
+                    <div className="text-center py-10 text-slate-400 text-sm font-medium">
+                      कोई पाठ बुकमार्क नहीं किया गया है। पाठ पढ़ते समय 🔖 बटन दबाकर सहेजें।
+                    </div>
+                  ) : (
+                    bookmarkedLessons.map((bId) => {
+                      const data = getLessonById(bId);
+                      if (!data) return null;
+                      return (
+                        <div
+                          key={bId}
+                          className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between gap-3"
+                        >
+                          <div>
+                            <span className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400">
+                              Chapter {data.chapter.number} • Lesson {data.lesson.lessonNumber}
+                            </span>
+                            <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                              {data.lesson.title}
+                            </h4>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => toggleLessonBookmark(bId)}
+                              className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer"
+                              title="हटाएं"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedChapterId(data.chapter.id);
+                                setSelectedLessonId(data.lesson.id);
+                                setShowProgressModal(false);
+                              }}
+                              className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-colors cursor-pointer"
+                            >
+                              खोलें
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+
+              {progressModalTab === 'settings' && (
+                <div className="space-y-4">
+                  <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 space-y-2">
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                      सभी 100 पाठ पूरे चिह्नित करें (Mark All Complete)
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      यदि आप पहले से अंग्रेजी जानते हैं या संपूर्ण सामग्री अनलॉक करना चाहते हैं।
+                    </p>
+                    <button
+                      onClick={markAllProgress}
+                      className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors cursor-pointer"
+                    >
+                      ✓ सभी पाठ पूरे मार्क करें (Mark All 100 as Done)
+                    </button>
+                  </div>
+
+                  <div className="p-4 rounded-2xl border border-red-200 dark:border-red-900/60 bg-red-50/50 dark:bg-red-950/20 space-y-2">
+                    <h4 className="text-sm font-bold text-red-700 dark:text-red-400">
+                      प्रगति रीसेट करें (Reset Progress)
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      सभी पाठों का स्टेटस अनचेक करें और दोबारा 0% से शुरुआत करें।
+                    </p>
+                    <button
+                      onClick={resetAllProgress}
+                      className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-colors cursor-pointer"
+                    >
+                      रीसेट करें (Reset All Progress)
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
+              {nextIncomplete ? (
+                <button
+                  onClick={() => {
+                    setSelectedChapterId(nextIncomplete.chapter.id);
+                    setSelectedLessonId(nextIncomplete.lesson.id);
+                    setShowProgressModal(false);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+                >
+                  <Play className="w-3.5 h-3.5 fill-white" />
+                  <span>अगला पाठ पढ़ें (Ch {nextIncomplete.chapter.number} L{nextIncomplete.lesson.lessonNumber})</span>
+                </button>
+              ) : (
+                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                  🎉 बधाई! आपने सभी 100 पाठ पूरे कर लिए हैं!
+                </span>
+              )}
+
+              <button
+                onClick={() => setShowProgressModal(false)}
+                className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition-colors cursor-pointer"
+              >
+                बंद करें (Close)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-2xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-xs sm:text-sm font-bold shadow-xl border border-slate-700 dark:border-slate-300 animate-fadeIn flex items-center gap-2">
+          <span>{toastMessage}</span>
+        </div>
+      )}
     </div>
   );
 };

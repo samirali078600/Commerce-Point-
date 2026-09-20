@@ -30,22 +30,23 @@ import { AppLanguage } from '../types';
 
 interface OxfordTranslationViewProps {
   language: AppLanguage;
-  initialChapterNumber?: number;
+  initialChapterNumber?: number | null;
   initialTab?: 'rules' | 'exercises' | 'vocabulary' | 'verb-forms' | 'quiz';
   onBack: () => void;
 }
 
 export const OxfordTranslationView: React.FC<OxfordTranslationViewProps> = ({
   language,
-  initialChapterNumber = 1,
+  initialChapterNumber = null,
   initialTab = 'rules',
   onBack
 }) => {
   const isHi = language === 'hi';
 
   // Navigation state: selected chapter (or null for TOC view)
-  const [selectedChapterNumber, setSelectedChapterNumber] = useState<number | null>(initialChapterNumber);
+  const [selectedChapterNumber, setSelectedChapterNumber] = useState<number | null>(initialChapterNumber ?? null);
   const [activeTab, setActiveTab] = useState<'rules' | 'exercises' | 'vocabulary' | 'verb-forms' | 'quiz'>(initialTab);
+  const [categoryFilter, setCategoryFilter] = useState<'all' | 'basics' | 'tenses' | 'advanced'>('all');
   
   // Search state for TOC & Vocabulary
   const [tocSearch, setTocSearch] = useState('');
@@ -110,16 +111,25 @@ export const OxfordTranslationView: React.FC<OxfordTranslationViewProps> = ({
 
   // Filtered TOC
   const filteredChapters = useMemo(() => {
-    if (!tocSearch.trim()) return OXFORD_ALL_CHAPTERS;
+    let list = OXFORD_ALL_CHAPTERS;
+    if (categoryFilter === 'basics') {
+      list = list.filter(c => c.chapterNumber >= 1 && c.chapterNumber <= 8);
+    } else if (categoryFilter === 'tenses') {
+      list = list.filter(c => c.chapterNumber >= 9 && c.chapterNumber <= 18);
+    } else if (categoryFilter === 'advanced') {
+      list = list.filter(c => c.chapterNumber >= 19 && c.chapterNumber <= 23);
+    }
+
+    if (!tocSearch.trim()) return list;
     const q = tocSearch.toLowerCase().trim();
-    return OXFORD_ALL_CHAPTERS.filter(c =>
+    return list.filter(c =>
       c.chapterNumber.toString().includes(q) ||
       c.heading.toLowerCase().includes(q) ||
       c.hindiHeading.toLowerCase().includes(q) ||
       c.pageNo.toString().includes(q) ||
       c.description.toLowerCase().includes(q)
     );
-  }, [tocSearch]);
+  }, [tocSearch, categoryFilter]);
 
   // Filtered Vocab
   const filteredVocab = useMemo(() => {
@@ -166,9 +176,9 @@ export const OxfordTranslationView: React.FC<OxfordTranslationViewProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-50 min-h-screen">
+    <div className="flex-1 flex flex-col bg-slate-50/50 dark:bg-transparent min-h-screen">
       {/* Top Banner Navigation */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-xs">
+      <div className="bg-white/95 dark:bg-[#070b15]/95 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 sticky top-0 z-20 shadow-xs dark:shadow-md dark:shadow-black/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2 sm:gap-3">
             <button
@@ -180,7 +190,7 @@ export const OxfordTranslationView: React.FC<OxfordTranslationViewProps> = ({
                   onBack();
                 }
               }}
-              className="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors inline-flex items-center gap-1.5 text-sm font-medium"
+              className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors inline-flex items-center gap-1.5 text-sm font-medium cursor-pointer"
               title="Back"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -189,15 +199,15 @@ export const OxfordTranslationView: React.FC<OxfordTranslationViewProps> = ({
               </span>
             </button>
 
-            <div className="h-5 w-px bg-slate-200 hidden sm:block" />
+            <div className="h-5 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block" />
 
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
-                <BookMarked className="w-3.5 h-3.5 text-amber-700" />
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60">
+                <BookMarked className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
                 <span>Oxford Translation</span>
               </span>
               {selectedChapterNumber !== null && (
-                <span className="text-xs font-semibold text-slate-500 hidden md:inline">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 hidden md:inline">
                   Chapter {selectedChapterNumber} of 23 • Page {currentChapter?.pageNo}
                 </span>
               )}
@@ -211,7 +221,7 @@ export const OxfordTranslationView: React.FC<OxfordTranslationViewProps> = ({
                 <button
                   onClick={handlePrevChapter}
                   disabled={selectedChapterNumber <= 1}
-                  className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-medium flex items-center gap-1"
+                  className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-medium flex items-center gap-1 cursor-pointer"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   <span className="hidden sm:inline">Prev</span>
@@ -225,10 +235,10 @@ export const OxfordTranslationView: React.FC<OxfordTranslationViewProps> = ({
                     setQuizAnswers({});
                     setQuizSubmitted(false);
                   }}
-                  className="text-xs sm:text-sm font-semibold bg-slate-100 border border-slate-300 text-slate-800 rounded-lg px-2.5 py-1.5 max-w-[200px] sm:max-w-[280px] truncate focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="text-xs sm:text-sm font-semibold bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-lg px-2.5 py-1.5 max-w-[200px] sm:max-w-[280px] truncate focus:outline-none focus:ring-2 focus:ring-amber-500"
                 >
                   {OXFORD_ALL_CHAPTERS.map(ch => (
-                    <option key={ch.chapterNumber} value={ch.chapterNumber}>
+                    <option key={ch.chapterNumber} value={ch.chapterNumber} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
                       Ch {ch.chapterNumber}: {ch.heading} (p. {ch.pageNo})
                     </option>
                   ))}
@@ -237,14 +247,14 @@ export const OxfordTranslationView: React.FC<OxfordTranslationViewProps> = ({
                 <button
                   onClick={handleNextChapter}
                   disabled={selectedChapterNumber >= OXFORD_ALL_CHAPTERS.length}
-                  className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-medium flex items-center gap-1"
+                  className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-medium flex items-center gap-1 cursor-pointer"
                 >
                   <span className="hidden sm:inline">Next</span>
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
             ) : (
-              <div className="text-xs text-slate-500 font-medium">
+              <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                 23 Chapters • 312 Pages
               </div>
             )}
@@ -304,16 +314,60 @@ export const OxfordTranslationView: React.FC<OxfordTranslationViewProps> = ({
             </div>
           </div>
 
+          {/* Category Filter Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-4">
+            <button
+              onClick={() => setCategoryFilter('all')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                categoryFilter === 'all'
+                  ? 'bg-amber-700 text-white shadow-xs'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              <span>{isHi ? 'सभी 23 अध्याय (All 1–23)' : 'All 23 Chapters'}</span>
+            </button>
+            <button
+              onClick={() => setCategoryFilter('basics')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                categoryFilter === 'basics'
+                  ? 'bg-amber-700 text-white shadow-xs'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              <span>{isHi ? 'Ch 1–8: Be / Have प्रयोग' : 'Ch 1–8: Verbs Be & Have'}</span>
+            </button>
+            <button
+              onClick={() => setCategoryFilter('tenses')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                categoryFilter === 'tenses'
+                  ? 'bg-amber-700 text-white shadow-xs'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              <span>{isHi ? 'Ch 9–18: संपूर्ण काल (All Tenses)' : 'Ch 9–18: All 12 Tenses'}</span>
+            </button>
+            <button
+              onClick={() => setCategoryFilter('advanced')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                categoryFilter === 'advanced'
+                  ? 'bg-amber-700 text-white shadow-xs'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              <span>{isHi ? 'Ch 19–23: Modals, Voice व Verb Forms' : 'Ch 19–23: Modals, Voice & Verbs'}</span>
+            </button>
+          </div>
+
           {/* Contents Table / Cards Grid */}
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg sm:text-xl font-bold text-slate-900 flex items-center gap-2">
-              <span>📚 CONTENTS (विषय सूची)</span>
+              <span>📚 विषय सूची (Chapter Directory 1 to 23)</span>
               <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">
                 {filteredChapters.length} Chapters
               </span>
             </h2>
             <div className="text-xs text-slate-500 font-medium">
-              Click on any chapter to start studying
+              {isHi ? 'किसी भी अध्याय पर क्लिक कर संपूर्ण सामग्री पढ़ें' : 'Click any chapter to view full material'}
             </div>
           </div>
 
@@ -331,24 +385,16 @@ export const OxfordTranslationView: React.FC<OxfordTranslationViewProps> = ({
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-800 font-black flex items-center justify-center text-sm border border-amber-200 shrink-0 group-hover:bg-amber-600 group-hover:text-white transition-colors">
-                      {ch.chapterNumber}
+                    <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-800 font-black flex flex-col items-center justify-center border border-amber-200 shrink-0 group-hover:bg-amber-600 group-hover:text-white transition-colors">
+                      <span className="text-[10px] uppercase font-bold leading-none">Ch</span>
+                      <span className="text-sm font-black leading-tight">{ch.chapterNumber}</span>
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-amber-700">
-                          Chapter {ch.chapterNumber}
-                        </span>
-                        <span className="text-xs font-medium text-slate-400">•</span>
-                        <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
-                          Page {ch.pageNo}
-                        </span>
-                      </div>
-                      <h3 className="text-base font-bold text-slate-900 group-hover:text-amber-700 transition-colors mt-0.5 leading-snug">
-                        {ch.heading}
+                      <h3 className="text-base font-extrabold text-slate-900 group-hover:text-amber-700 transition-colors leading-snug">
+                        Chapter {ch.chapterNumber}: {ch.heading}
                       </h3>
-                      <p className="text-xs text-slate-500 mt-1 line-clamp-2">
-                        {ch.hindiHeading}
+                      <p className="text-xs text-slate-600 mt-1 font-medium">
+                        अध्याय {ch.chapterNumber}: {ch.hindiHeading}
                       </p>
                     </div>
                   </div>
@@ -356,15 +402,16 @@ export const OxfordTranslationView: React.FC<OxfordTranslationViewProps> = ({
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                  <div className="flex items-center gap-2 font-medium">
-                    <span>{ch.rules.length} Rules</span>
-                    <span>•</span>
-                    <span>{ch.exercises.length} Exercises</span>
-                    <span>•</span>
-                    <span>{ch.vocabulary.length} Vocab</span>
+                  <div className="flex items-center gap-2 font-bold text-slate-700">
+                    <span className="text-amber-800">20 Rules</span>
+                    <span className="text-slate-300">•</span>
+                    <span className="text-blue-800">30 Exercises</span>
+                    <span className="text-slate-300">•</span>
+                    <span className="text-emerald-800">30 Vocab</span>
                   </div>
-                  <span className="font-bold text-amber-600 group-hover:underline">
-                    अध्ययन करें →
+                  <span className="font-bold text-amber-700 group-hover:underline flex items-center gap-1">
+                    <span>{isHi ? 'सामग्री देखें' : 'Study'}</span>
+                    <span>→</span>
                   </span>
                 </div>
               </button>
@@ -376,10 +423,13 @@ export const OxfordTranslationView: React.FC<OxfordTranslationViewProps> = ({
               <HelpCircle className="w-10 h-10 text-slate-400 mx-auto mb-2" />
               <p className="text-slate-600 font-medium">कोई अध्याय नहीं मिला (No chapters match your search)</p>
               <button
-                onClick={() => setTocSearch('')}
-                className="mt-3 text-xs font-bold text-amber-700 underline"
+                onClick={() => {
+                  setTocSearch('');
+                  setCategoryFilter('all');
+                }}
+                className="mt-3 text-xs font-bold text-amber-700 underline cursor-pointer"
               >
-                Clear Search
+                Clear Search & Filter
               </button>
             </div>
           )}
@@ -390,29 +440,41 @@ export const OxfordTranslationView: React.FC<OxfordTranslationViewProps> = ({
       {selectedChapterNumber !== null && currentChapter && (
         <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 flex-1 flex flex-col">
           {/* Chapter Header Banner */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-7 mb-6 shadow-xs">
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
-              <div className="flex items-center gap-2">
-                <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-amber-100 text-amber-900 border border-amber-200">
-                  Chapter {currentChapter.chapterNumber}
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 mb-6 shadow-xs">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <button
+                id="oxford-back-to-toc-btn"
+                onClick={() => {
+                  setSelectedChapterNumber(null);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="px-3.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs sm:text-sm font-bold border border-amber-300 transition-all flex items-center gap-2 cursor-pointer shadow-xs active:scale-95"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>{isHi ? '← सभी अध्याय (All Chapters)' : '← All Chapters'}</span>
+              </button>
+
+              <div className="flex items-center gap-2 text-xs font-black">
+                <span className="px-3 py-1 rounded-lg bg-amber-100 text-amber-900 border border-amber-200">
+                  20 Rules
                 </span>
-                <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
-                  Page No. {currentChapter.pageNo}
+                <span className="text-slate-300">•</span>
+                <span className="px-3 py-1 rounded-lg bg-blue-100 text-blue-900 border border-blue-200">
+                  30 Exercises
                 </span>
-              </div>
-              <div className="text-xs text-slate-500 font-medium">
-                Oxford Current English Translation
+                <span className="text-slate-300">•</span>
+                <span className="px-3 py-1 rounded-lg bg-emerald-100 text-emerald-900 border border-emerald-200">
+                  30 Vocab
+                </span>
               </div>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
-              {currentChapter.heading}
+            {/* Clean Chapter Number & Chapter Name */}
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-tight">
+              Chapter {currentChapter.chapterNumber}: {currentChapter.heading}
             </h1>
-            <p className="text-base font-semibold text-amber-800 mt-1">
-              {currentChapter.hindiHeading}
-            </p>
-            <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed">
-              {currentChapter.description}
+            <p className="text-base font-bold text-amber-800 mt-1">
+              अध्याय {currentChapter.chapterNumber}: {currentChapter.hindiHeading}
             </p>
 
             {/* Navigation Tabs */}
@@ -427,7 +489,7 @@ export const OxfordTranslationView: React.FC<OxfordTranslationViewProps> = ({
                 }`}
               >
                 <BookOpen className="w-4 h-4" />
-                <span>नियम व सूत्र (Rules & Formulas)</span>
+                <span>नियम व सूत्र (Rules)</span>
                 <span className="text-[11px] px-1.5 py-0.2 rounded-full bg-slate-200 text-slate-700">
                   {currentChapter.rules.length}
                 </span>

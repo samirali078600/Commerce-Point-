@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Search, BookOpen, GraduationCap, Globe } from 'lucide-react';
+import { ArrowLeft, Search, BookOpen, Globe } from 'lucide-react';
 import { ViewMode, AppLanguage } from '../types';
 
 interface HeaderProps {
@@ -34,7 +34,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               id="global-back-button"
               onClick={onBack}
-              className="p-2 -ml-2 rounded-xl text-slate-700 hover:text-slate-900 hover:bg-slate-100 active:bg-slate-200 transition-colors flex items-center justify-center shrink-0"
+              className="p-2 -ml-2 rounded-xl text-slate-700 hover:text-slate-900 hover:bg-slate-100 active:bg-slate-200 transition-colors flex items-center justify-center shrink-0 cursor-pointer"
               aria-label={language === 'hi' ? 'पीछे जाएं / Go Back' : 'Go Back'}
               title="Go Back"
             >
@@ -45,18 +45,25 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             id="brand-home-link"
             onClick={onGoHome}
-            className="flex items-center gap-2.5 text-left truncate group focus:outline-none"
+            className="flex items-center gap-2.5 text-left truncate group focus:outline-none cursor-pointer"
           >
-            <div className="w-9 h-9 rounded-xl bg-blue-700 text-white flex items-center justify-center shadow-xs shrink-0 group-hover:bg-blue-800 transition-colors">
-              <GraduationCap className="w-5 h-5" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl overflow-hidden bg-blue-900 border border-amber-400/40 shadow-xs shrink-0 group-hover:scale-105 transition-transform flex items-center justify-center">
+              <img
+                src="/images/gurukul_app_logo.jpg"
+                alt="Gurukul Rajesh Sir Logo"
+                className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+              />
             </div>
             <div className="truncate">
               <h1 className="text-base sm:text-lg font-bold tracking-tight text-slate-900 leading-tight truncate">
-                {title || (language === 'hi' ? 'कॉमर्स पॉइंट (Commerce Point)' : 'Commerce Point')}
+                {title || (language === 'hi' ? 'गुरुकुल राजेश सर (Gurukul Rajesh Sir)' : 'Gurukul Rajesh Sir')}
               </h1>
-              <p className="text-xs text-slate-500 truncate font-medium">
-                {subtitle || (language === 'hi' ? 'BSEB कक्षा 12वीं अध्ययन एवं प्रश्न बैंक' : 'BSEB Class 12 Study & Question Bank')}
-              </p>
+              {subtitle && subtitle.trim() ? (
+                <p className="text-xs text-slate-500 truncate font-medium">
+                  {subtitle}
+                </p>
+              ) : null}
             </div>
           </button>
         </div>
@@ -94,7 +101,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             id="open-search-button"
             onClick={onOpenSearch}
-            className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200/80 hover:text-slate-900 transition-colors border border-slate-200/60"
+            className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200/80 hover:text-slate-900 transition-colors border border-slate-200/60 cursor-pointer"
             aria-label={language === 'hi' ? 'खोजें / Search' : 'Search'}
           >
             <Search className="w-4 h-4 text-slate-500" />
@@ -108,3 +115,4 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
+
