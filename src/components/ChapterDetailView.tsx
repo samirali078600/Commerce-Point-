@@ -336,12 +336,19 @@ export const ChapterDetailView: React.FC<ChapterDetailViewProps> = ({
           </div>
         </div>
 
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
-          {chapter.titleHindi}
+        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+          <span>{chapter.titleHindi}</span>
+          {chapter.titleEnglish && chapter.titleEnglish.trim() !== chapter.titleHindi.trim() && (
+            <span className="text-base sm:text-lg font-semibold text-slate-600">
+              ({chapter.titleEnglish})
+            </span>
+          )}
         </h2>
-        <p className="text-xs sm:text-sm text-slate-600 mt-0.5">
-          {chapter.titleEnglish} {chapter.authorOrContext && `• ${chapter.authorOrContext}`}
-        </p>
+        {chapter.authorOrContext && (
+          <p className="text-xs sm:text-sm text-slate-600 mt-1">
+            {isHi ? 'लेखक / संदर्भ:' : 'Author / Context:'} {chapter.authorOrContext}
+          </p>
+        )}
 
         {/* Source citation */}
         <div className="mt-2.5 flex flex-wrap items-center gap-2">
@@ -474,10 +481,10 @@ export const ChapterDetailView: React.FC<ChapterDetailViewProps> = ({
             {/* Textbook Metadata Header */}
             <div className="mb-6 pb-4 border-b border-black/10 flex flex-wrap items-center justify-between gap-2 opacity-80 text-xs">
               <span className="font-bold tracking-wide uppercase">
-                {subject.bookName} • Bihar Board (BSEB) Class 12
+                {subject.bookName} • Bihar Board (BSEB) Class {subject.classLevel || 12}
               </span>
               <span className="font-mono">
-                {isHi ? '📖 सम्पूर्ण पाठ्यपुस्तक विवरण • 2,500+ शब्द' : '📖 Full Textbook Chapter • 2,500+ Words'}
+                {isHi ? '📖 सम्पूर्ण पाठ्यपुस्तक एवं गहन अध्ययन सामग्री' : '📖 Complete Textbook & In-Depth Study'}
               </span>
             </div>
 

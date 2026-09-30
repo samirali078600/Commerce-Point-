@@ -15,25 +15,36 @@ import {
 } from 'lucide-react';
 import { AppLanguage } from '../types';
 
-interface HomePageProps {
+export interface HomePageProps {
   language: AppLanguage;
   onToggleLanguage?: (lang: AppLanguage) => void;
-  onSelectSubjects: () => void;
-  onSelectPYQ: () => void;
+  onSelectClass10Subjects: () => void;
+  onSelectClass10PYQ: () => void;
+  onSelectClass12Subjects: () => void;
+  onSelectClass12PYQ: () => void;
   onSelectEnglish: () => void;
   onSelectOxford: () => void;
+  onSelectSubjects?: () => void;
+  onSelectPYQ?: () => void;
 }
 
 export const HomePage: React.FC<HomePageProps> = ({
   language,
-  onSelectSubjects,
-  onSelectPYQ,
+  onSelectClass10Subjects,
+  onSelectClass10PYQ,
+  onSelectClass12Subjects,
+  onSelectClass12PYQ,
   onSelectEnglish,
   onSelectOxford,
+  onSelectSubjects,
+  onSelectPYQ,
 }) => {
   const isHi = language === 'hi';
   const [activeSlide, setActiveSlide] = useState<number>(0);
   const [isPaused, setIsPaused] = useState<boolean>(false);
+
+  const handleClass12Subjects = onSelectClass12Subjects || onSelectSubjects;
+  const handleClass12PYQ = onSelectClass12PYQ || onSelectPYQ;
 
   // Auto-advance slides every 7 seconds unless paused by hover
   useEffect(() => {
@@ -185,7 +196,9 @@ export const HomePage: React.FC<HomePageProps> = ({
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs">
                 {/* Address */}
                 <div className="p-2 rounded-lg bg-blue-950/60 border border-blue-800/40">
-                  <div className="text-rose-400 font-bold text-[10px] uppercase">📍 पता (Address)</div>
+                  <div className="text-rose-400 font-bold text-[10px] uppercase">
+                    {isHi ? '📍 पता (Address)' : '📍 Address'}
+                  </div>
                   <div className="text-white font-medium text-[11px] truncate" title="Fazilpur, Main Road, Andar, Siwan">
                     Fazilpur, Andar, Siwan
                   </div>
@@ -193,25 +206,33 @@ export const HomePage: React.FC<HomePageProps> = ({
 
                 {/* Classes */}
                 <div className="p-2 rounded-lg bg-blue-950/60 border border-blue-800/40">
-                  <div className="text-sky-400 font-bold text-[10px] uppercase">📚 कक्षाएं (Classes)</div>
+                  <div className="text-sky-400 font-bold text-[10px] uppercase">
+                    {isHi ? '📚 कक्षाएं (Classes)' : '📚 Classes'}
+                  </div>
                   <div className="text-white font-bold text-[11px]">Classes 6th–12th</div>
                 </div>
 
                 {/* Streams */}
                 <div className="p-2 rounded-lg bg-blue-950/60 border border-blue-800/40">
-                  <div className="text-amber-400 font-bold text-[10px] uppercase">🎓 संकाय (Streams)</div>
+                  <div className="text-amber-400 font-bold text-[10px] uppercase">
+                    {isHi ? '🎓 संकाय (Streams)' : '🎓 Streams'}
+                  </div>
                   <div className="text-white font-bold text-[11px]">Science, Arts, Comm</div>
                 </div>
 
                 {/* Spoken English */}
                 <div className="p-2 rounded-lg bg-blue-950/60 border border-blue-800/40">
-                  <div className="text-emerald-400 font-bold text-[10px] uppercase">🗣️ Spoken English</div>
+                  <div className="text-emerald-400 font-bold text-[10px] uppercase">
+                    {isHi ? '🗣️ स्पोकन इंग्लिश' : '🗣️ Spoken English'}
+                  </div>
                   <div className="text-white font-bold text-[11px]">Special Daily Batches</div>
                 </div>
 
                 {/* Faculty */}
                 <div className="p-2 rounded-lg bg-blue-950/60 border border-blue-800/40">
-                  <div className="text-indigo-400 font-bold text-[10px] uppercase">👨‍🏫 शिक्षक (Faculty)</div>
+                  <div className="text-indigo-400 font-bold text-[10px] uppercase">
+                    {isHi ? '👨‍🏫 शिक्षक (Faculty)' : '👨‍🏫 Faculty'}
+                  </div>
                   <div className="text-white font-bold text-[11px] truncate">
                     Rajesh Sir & Vicky Sir
                   </div>
@@ -219,7 +240,9 @@ export const HomePage: React.FC<HomePageProps> = ({
 
                 {/* Contact */}
                 <div className="p-2 rounded-lg bg-emerald-950/50 border border-emerald-800/40">
-                  <div className="text-emerald-400 font-bold text-[10px] uppercase">📞 संपर्क (Contact)</div>
+                  <div className="text-emerald-400 font-bold text-[10px] uppercase">
+                    {isHi ? '📞 संपर्क (Contact)' : '📞 Contact'}
+                  </div>
                   <a href="tel:9065753726" className="text-white font-bold text-[11px] hover:underline">
                     9065753726
                   </a>
@@ -252,143 +275,204 @@ export const HomePage: React.FC<HomePageProps> = ({
       </div>
 
       {/* ========================================================================= */}
-      {/* THE FOUR MAIN LEARNING CARDS                                              */}
+      {/* MAIN LEARNING CARDS FOR CLASS 10, CLASS 12 & ENGLISH                       */}
       {/* ========================================================================= */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
+      <div className="space-y-6">
+        <div>
           <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
             <span>🎯</span>
-            {isHi ? 'अध्ययन सामग्री एवं पाठ्यक्रम' : 'Study Modules & Question Bank'}
+            <span>{isHi ? 'अध्ययन सामग्री एवं प्रश्न बैंक' : 'Study Modules & Question Bank'}</span>
           </h2>
-          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-            {isHi ? 'गुरुकुल राजेश सर डिजिटल लर्निंग' : 'Gurukul Rajesh Sir Digital Learning'}
-          </span>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            {isHi
+              ? 'बिहार बोर्ड कक्षा 10, कक्षा 12 एवं स्पेशल इंग्लिश कोर्स'
+              : 'BSEB Class 10, Class 12 & Special English Courses'}
+          </p>
         </div>
 
+        {/* SECTION 1: CLASS 10 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
-          {/* Card 1: Class 12 Subject */}
-          <button
-            id="home-subjects-card-button"
-            onClick={onSelectSubjects}
-            className="group relative flex flex-col justify-between text-left p-6 sm:p-7 bg-white dark:bg-slate-900/80 backdrop-blur-md rounded-2xl border-2 border-slate-200 dark:border-slate-800 hover:border-blue-600 dark:hover:border-blue-400 hover:shadow-xl hover:shadow-blue-500/10 dark:hover:shadow-[0_0_25px_rgba(59,130,246,0.22)] active:scale-[0.99] transition-all duration-200 cursor-pointer overflow-hidden min-h-[200px]"
-          >
-            <div className="absolute top-0 right-0 w-28 h-28 bg-blue-50 dark:bg-blue-950/40 rounded-bl-full -mr-6 -mt-6 group-hover:scale-110 transition-transform duration-300 pointer-events-none" />
-            
-            <div>
-              <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md dark:shadow-blue-600/30 mb-4 group-hover:bg-blue-700 dark:group-hover:bg-blue-500 transition-colors">
-                <BookOpen className="w-6 h-6" />
-              </div>
+              {/* Card 10-A: Class 10 Subject */}
+              <button
+                id="home-class10-subjects-card-button"
+                onClick={onSelectClass10Subjects}
+                className="group relative flex flex-col justify-between text-left p-6 sm:p-7 bg-white dark:bg-slate-900/80 backdrop-blur-md rounded-2xl border-2 border-slate-200 dark:border-slate-800 hover:border-emerald-600 dark:hover:border-emerald-400 hover:shadow-xl hover:shadow-emerald-500/10 dark:hover:shadow-[0_0_25px_rgba(16,185,129,0.22)] active:scale-[0.99] transition-all duration-200 cursor-pointer overflow-hidden min-h-[160px]"
+              >
+                <div className="absolute top-0 right-0 w-28 h-28 bg-emerald-50 dark:bg-emerald-950/40 rounded-bl-full -mr-6 -mt-6 group-hover:scale-110 transition-transform duration-300 pointer-events-none" />
+                
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-md dark:shadow-emerald-600/30 group-hover:bg-emerald-700 dark:group-hover:bg-emerald-500 transition-colors">
+                      <BookOpen className="w-6 h-6" />
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 uppercase tracking-wider">
+                      Matric BSEB
+                    </span>
+                  </div>
 
-              <div>
-                <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors leading-snug">
-                  📚 {isHi ? 'कक्षा 12 विषय (Class 12 Subject)' : 'Class 12 Subject'}
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 font-medium leading-relaxed">
-                  {isHi
-                    ? 'Science, Arts व Commerce के सभी 169 अध्याय, नोट्स, 50+ MCQs एवं फॉर्मूला शीट'
-                    : 'All 169 chapters across Science, Arts & Commerce with verified notes & MCQs'}
-                </p>
-              </div>
-            </div>
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors leading-snug">
+                      📚 {isHi ? 'कक्षा 10 विषय (Class 10 Subject)' : 'Class 10 Subject'}
+                    </h3>
+                  </div>
+                </div>
 
-            <div className="pt-4 mt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-blue-600 dark:text-blue-400">
-              <span>{isHi ? 'विषय देखें' : 'Explore Subjects'}</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </div>
-          </button>
+                <div className="pt-4 mt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                  <span>{isHi ? 'कक्षा 10 विषय देखें' : 'Explore Class 10 Subjects'}</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </button>
 
-          {/* Card 2: Class 12 Question Bank 2010 to 2026 */}
-          <button
-            id="home-pyq-card-button"
-            onClick={onSelectPYQ}
-            className="group relative flex flex-col justify-between text-left p-6 sm:p-7 bg-white dark:bg-slate-900/80 backdrop-blur-md rounded-2xl border-2 border-slate-200 dark:border-slate-800 hover:border-amber-600 dark:hover:border-amber-400 hover:shadow-xl hover:shadow-amber-500/10 dark:hover:shadow-[0_0_25px_rgba(245,158,11,0.22)] active:scale-[0.99] transition-all duration-200 cursor-pointer overflow-hidden min-h-[200px]"
-          >
-            <div className="absolute top-0 right-0 w-28 h-28 bg-amber-50 dark:bg-amber-950/40 rounded-bl-full -mr-6 -mt-6 group-hover:scale-110 transition-transform duration-300 pointer-events-none" />
-            
-            <div>
-              <div className="w-12 h-12 rounded-2xl bg-amber-600 text-white flex items-center justify-center shadow-md dark:shadow-amber-600/30 mb-4 group-hover:bg-amber-700 dark:group-hover:bg-amber-500 transition-colors">
-                <FileText className="w-6 h-6" />
-              </div>
+              {/* Card 10-B: Class 10 Question Bank 2010 to 2026 */}
+              <button
+                id="home-class10-pyq-card-button"
+                onClick={onSelectClass10PYQ}
+                className="group relative flex flex-col justify-between text-left p-6 sm:p-7 bg-white dark:bg-slate-900/80 backdrop-blur-md rounded-2xl border-2 border-slate-200 dark:border-slate-800 hover:border-teal-600 dark:hover:border-teal-400 hover:shadow-xl hover:shadow-teal-500/10 dark:hover:shadow-[0_0_25px_rgba(20,184,166,0.22)] active:scale-[0.99] transition-all duration-200 cursor-pointer overflow-hidden min-h-[160px]"
+              >
+                <div className="absolute top-0 right-0 w-28 h-28 bg-teal-50 dark:bg-teal-950/40 rounded-bl-full -mr-6 -mt-6 group-hover:scale-110 transition-transform duration-300 pointer-events-none" />
+                
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 rounded-2xl bg-teal-600 text-white flex items-center justify-center shadow-md dark:shadow-teal-600/30 group-hover:bg-teal-700 dark:group-hover:bg-teal-500 transition-colors">
+                      <FileText className="w-6 h-6" />
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/60 text-teal-800 dark:text-teal-200 uppercase tracking-wider">
+                      2010–2026 (17 Years)
+                    </span>
+                  </div>
 
-              <div>
-                <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors leading-snug">
-                  📝 {isHi ? 'कक्षा 12 प्रश्न बैंक 2010 से 2026' : 'Class 12 Question Bank 2010 to 2026'}
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 font-medium leading-relaxed">
-                  {isHi
-                    ? 'विगत 17 वर्षों (2010–2026) के प्रामाणिक बिहार बोर्ड प्रश्न पत्र एवं समाधान'
-                    : '17 Years (2010–2026) authentic BSEB question papers with answer keys'}
-                </p>
-              </div>
-            </div>
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 group-hover:text-teal-700 dark:group-hover:text-teal-400 transition-colors leading-snug">
+                      📝 {isHi ? 'कक्षा 10 प्रश्न बैंक 2010 से 2026' : 'Class 10 Question Bank 2010 to 2026'}
+                    </h3>
+                  </div>
+                </div>
 
-            <div className="pt-4 mt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-amber-600 dark:text-amber-400">
-              <span>{isHi ? 'प्रश्न बैंक देखें' : 'Open Question Bank'}</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </div>
-          </button>
+                <div className="pt-4 mt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-teal-600 dark:text-teal-400">
+                  <span>{isHi ? 'कक्षा 10 प्रश्न बैंक खोलें' : 'Open Class 10 Question Bank'}</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </button>
+        </div>
 
-          {/* Card 3: Learn English and Spoken */}
-          <button
-            id="home-english-card-button"
-            onClick={onSelectEnglish}
-            className="group relative flex flex-col justify-between text-left p-6 sm:p-7 bg-white dark:bg-slate-900/80 backdrop-blur-md rounded-2xl border-2 border-slate-200 dark:border-slate-800 hover:border-indigo-600 dark:hover:border-indigo-400 hover:shadow-xl hover:shadow-indigo-500/10 dark:hover:shadow-[0_0_25px_rgba(99,102,241,0.22)] active:scale-[0.99] transition-all duration-200 cursor-pointer overflow-hidden min-h-[200px]"
-          >
-            <div className="absolute top-0 right-0 w-28 h-28 bg-indigo-50 dark:bg-indigo-950/40 rounded-bl-full -mr-6 -mt-6 group-hover:scale-110 transition-transform duration-300 pointer-events-none" />
-            
-            <div>
-              <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md dark:shadow-indigo-600/30 mb-4 group-hover:bg-indigo-700 dark:group-hover:bg-indigo-500 transition-colors">
-                <Languages className="w-6 h-6" />
-              </div>
+        {/* SECTION 2: CLASS 12 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+          {/* Card 12-A: Class 12 Subject */}
+              <button
+                id="home-subjects-card-button"
+                onClick={handleClass12Subjects}
+                className="group relative flex flex-col justify-between text-left p-6 sm:p-7 bg-white dark:bg-slate-900/80 backdrop-blur-md rounded-2xl border-2 border-slate-200 dark:border-slate-800 hover:border-blue-600 dark:hover:border-blue-400 hover:shadow-xl hover:shadow-blue-500/10 dark:hover:shadow-[0_0_25px_rgba(59,130,246,0.22)] active:scale-[0.99] transition-all duration-200 cursor-pointer overflow-hidden min-h-[160px]"
+              >
+                <div className="absolute top-0 right-0 w-28 h-28 bg-blue-50 dark:bg-blue-950/40 rounded-bl-full -mr-6 -mt-6 group-hover:scale-110 transition-transform duration-300 pointer-events-none" />
+                
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md dark:shadow-blue-600/30 group-hover:bg-blue-700 dark:group-hover:bg-blue-500 transition-colors">
+                      <BookOpen className="w-6 h-6" />
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 uppercase tracking-wider">
+                      Inter BSEB
+                    </span>
+                  </div>
 
-              <div>
-                <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 group-hover:text-indigo-700 dark:group-hover:text-indigo-400 transition-colors leading-snug">
-                  🗣️ {isHi ? 'Learn English & Spoken' : 'Learn English & Spoken'}
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 font-medium leading-relaxed">
-                  {isHi
-                    ? '10 अध्याय (Chapter 1 to 10) • गहन अध्ययन, उदाहरण, Word Meaning, नियम व ऑडियो'
-                    : '10 Chapters (1 to 10) • Deep Lessons • Examples, Word Meanings & Audio • 100% English'}
-                </p>
-              </div>
-            </div>
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors leading-snug">
+                      📚 {isHi ? 'कक्षा 12 विषय (Class 12 Subject)' : 'Class 12 Subject'}
+                    </h3>
+                  </div>
+                </div>
 
-            <div className="pt-4 mt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-indigo-600 dark:text-indigo-400">
-              <span>{isHi ? 'English Course शुरू करें' : 'Start English Course'}</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </div>
-          </button>
+                <div className="pt-4 mt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-blue-600 dark:text-blue-400">
+                  <span>{isHi ? 'कक्षा 12 विषय देखें' : 'Explore Class 12 Subjects'}</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </button>
 
-          {/* Card 4: Oxford Current English Translation */}
-          <button
-            id="home-oxford-card-button"
-            onClick={onSelectOxford}
-            className="group relative flex flex-col justify-between text-left p-6 sm:p-7 bg-white dark:bg-slate-900/80 backdrop-blur-md rounded-2xl border-2 border-slate-200 dark:border-slate-800 hover:border-amber-700 dark:hover:border-amber-400 hover:shadow-xl hover:shadow-amber-600/10 dark:hover:shadow-[0_0_25px_rgba(217,119,6,0.22)] active:scale-[0.99] transition-all duration-200 cursor-pointer overflow-hidden min-h-[200px]"
-          >
-            <div className="absolute top-0 right-0 w-28 h-28 bg-amber-50/80 dark:bg-amber-950/40 rounded-bl-full -mr-6 -mt-6 group-hover:scale-110 transition-transform duration-300 pointer-events-none" />
-            
-            <div>
-              <div className="w-12 h-12 rounded-2xl bg-amber-700 text-white flex items-center justify-center shadow-md dark:shadow-amber-700/30 mb-4 group-hover:bg-amber-800 dark:group-hover:bg-amber-600 transition-colors">
-                <BookMarked className="w-6 h-6" />
-              </div>
+              {/* Card 12-B: Class 12 Question Bank 2010 to 2026 */}
+              <button
+                id="home-pyq-card-button"
+                onClick={handleClass12PYQ}
+                className="group relative flex flex-col justify-between text-left p-6 sm:p-7 bg-white dark:bg-slate-900/80 backdrop-blur-md rounded-2xl border-2 border-slate-200 dark:border-slate-800 hover:border-amber-600 dark:hover:border-amber-400 hover:shadow-xl hover:shadow-amber-500/10 dark:hover:shadow-[0_0_25px_rgba(245,158,11,0.22)] active:scale-[0.99] transition-all duration-200 cursor-pointer overflow-hidden min-h-[160px]"
+              >
+                <div className="absolute top-0 right-0 w-28 h-28 bg-amber-50 dark:bg-amber-950/40 rounded-bl-full -mr-6 -mt-6 group-hover:scale-110 transition-transform duration-300 pointer-events-none" />
+                
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-600 text-white flex items-center justify-center shadow-md dark:shadow-amber-600/30 group-hover:bg-amber-700 dark:group-hover:bg-amber-500 transition-colors">
+                      <FileText className="w-6 h-6" />
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 uppercase tracking-wider">
+                      2010–2026 (17 Years)
+                    </span>
+                  </div>
 
-              <div>
-                <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 group-hover:text-amber-800 dark:group-hover:text-amber-400 transition-colors leading-snug">
-                  📖 {isHi ? 'Oxford Current English Translation' : 'Oxford Current English Translation'}
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 font-medium leading-relaxed">
-                  {isHi
-                    ? '23 अध्याय (Ch 1 से 23, Page 9 से 312) • सभी नियम, Exercises, शब्दार्थ (Vocabulary) व Verb Forms'
-                    : 'All 23 Chapters (Ch 1 to 23, Page 9 to 312) • Complete Exercises, Rules, Vocabulary & Verb Forms'}
-                </p>
-              </div>
-            </div>
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors leading-snug">
+                      📝 {isHi ? 'कक्षा 12 प्रश्न बैंक 2010 से 2026' : 'Class 12 Question Bank 2010 to 2026'}
+                    </h3>
+                  </div>
+                </div>
 
-            <div className="pt-4 mt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-amber-700 dark:text-amber-400">
-              <span>{isHi ? 'ऑक्सफोर्ड ट्रांसलेशन शुरू करें' : 'Start Oxford Translation'}</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </div>
-          </button>
+                <div className="pt-4 mt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-amber-600 dark:text-amber-400">
+                  <span>{isHi ? 'कक्षा 12 प्रश्न बैंक देखें' : 'Open Class 12 Question Bank'}</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </button>
+        </div>
+
+        {/* SECTION 3: ENGLISH & TRANSLATION */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+              {/* Card 3: Learn English and Spoken */}
+              <button
+                id="home-english-card-button"
+                onClick={onSelectEnglish}
+                className="group relative flex flex-col justify-between text-left p-6 sm:p-7 bg-white dark:bg-slate-900/80 backdrop-blur-md rounded-2xl border-2 border-slate-200 dark:border-slate-800 hover:border-indigo-600 dark:hover:border-indigo-400 hover:shadow-xl hover:shadow-indigo-500/10 dark:hover:shadow-[0_0_25px_rgba(99,102,241,0.22)] active:scale-[0.99] transition-all duration-200 cursor-pointer overflow-hidden min-h-[160px]"
+              >
+                <div className="absolute top-0 right-0 w-28 h-28 bg-indigo-50 dark:bg-indigo-950/40 rounded-bl-full -mr-6 -mt-6 group-hover:scale-110 transition-transform duration-300 pointer-events-none" />
+                
+                <div>
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md dark:shadow-indigo-600/30 mb-4 group-hover:bg-indigo-700 dark:group-hover:bg-indigo-500 transition-colors">
+                    <Languages className="w-6 h-6" />
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 group-hover:text-indigo-700 dark:group-hover:text-indigo-400 transition-colors leading-snug">
+                      🗣️ {isHi ? 'Learn English & Spoken' : 'Learn English & Spoken'}
+                    </h3>
+                  </div>
+                </div>
+
+                <div className="pt-4 mt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                  <span>{isHi ? 'English Course शुरू करें' : 'Start English Course'}</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </button>
+
+              {/* Card 4: Oxford Current English Translation */}
+              <button
+                id="home-oxford-card-button"
+                onClick={onSelectOxford}
+                className="group relative flex flex-col justify-between text-left p-6 sm:p-7 bg-white dark:bg-slate-900/80 backdrop-blur-md rounded-2xl border-2 border-slate-200 dark:border-slate-800 hover:border-amber-700 dark:hover:border-amber-400 hover:shadow-xl hover:shadow-amber-600/10 dark:hover:shadow-[0_0_25px_rgba(217,119,6,0.22)] active:scale-[0.99] transition-all duration-200 cursor-pointer overflow-hidden min-h-[160px]"
+              >
+                <div className="absolute top-0 right-0 w-28 h-28 bg-amber-50/80 dark:bg-amber-950/40 rounded-bl-full -mr-6 -mt-6 group-hover:scale-110 transition-transform duration-300 pointer-events-none" />
+                
+                <div>
+                  <div className="w-12 h-12 rounded-2xl bg-amber-700 text-white flex items-center justify-center shadow-md dark:shadow-amber-700/30 mb-4 group-hover:bg-amber-800 dark:group-hover:bg-amber-600 transition-colors">
+                    <BookMarked className="w-6 h-6" />
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 group-hover:text-amber-800 dark:group-hover:text-amber-400 transition-colors leading-snug">
+                      📖 {isHi ? 'Oxford Current English Translation' : 'Oxford Current English Translation'}
+                    </h3>
+                  </div>
+                </div>
+
+                <div className="pt-4 mt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-amber-700 dark:text-amber-400">
+                  <span>{isHi ? 'ऑक्सफोर्ड ट्रांसलेशन शुरू करें' : 'Start Oxford Translation'}</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </button>
         </div>
       </div>
 

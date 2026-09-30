@@ -49,6 +49,8 @@ export const LearnEnglishView: React.FC<LearnEnglishViewProps> = ({
   initialLessonId,
   onBack
 }) => {
+  const isHi = language === 'hi';
+
   // Navigation states:
   // selectedChapterId: null = All 10 Chapters list; number (1-10) = Selected Chapter's 10 Lessons
   // selectedLessonId: null = Chapter view; string = Lesson Reader view
@@ -381,14 +383,14 @@ export const LearnEnglishView: React.FC<LearnEnglishViewProps> = ({
               id="english-progress-button"
               onClick={() => setShowProgressModal(true)}
               className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 text-xs font-bold transition-all shadow-2xs active:scale-95 cursor-pointer"
-              title="कोर्स प्रगति व रिपोर्ट देखें (View Progress Report)"
+              title={isHi ? "कोर्स प्रगति व रिपोर्ट देखें (View Progress Report)" : "View Progress Report"}
             >
               <Award className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span>
                 {completedLessons.length}/{TOTAL_LESSONS} ({completionPercentage}%)
               </span>
               <span className="hidden sm:inline text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-200/60 dark:bg-emerald-900/60 px-1.5 py-0.5 rounded">
-                प्रगति
+                {isHi ? 'प्रगति' : 'Progress'}
               </span>
             </button>
           </div>
@@ -423,7 +425,7 @@ export const LearnEnglishView: React.FC<LearnEnglishViewProps> = ({
                       className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-bold transition-colors cursor-pointer"
                     >
                       <ArrowLeft className="w-4 h-4" />
-                      <span>← सभी 10 अध्याय (Back to All Chapters)</span>
+                      <span>{isHi ? '← सभी 10 अध्याय (Back to All Chapters)' : '← All 10 Chapters'}</span>
                     </button>
                     <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
                       Chapter {activeChapter.number} of 10

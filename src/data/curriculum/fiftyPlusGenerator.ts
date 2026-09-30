@@ -1,4 +1,5 @@
 import { ChapterStudyMaterial, MCQQuestion, ShortQuestion, LongQuestion, FormulaOrDefinition } from '../../types';
+import { generateDeepBookReadContent } from './deepBookReaderGenerator';
 
 /**
  * Generates an extensive 50+ question bank and complete textbook-style reading material
@@ -507,77 +508,20 @@ export function enrichChapterWithFiftyPlus(
   }
   const allFD = [...existingFD, ...additionalFD];
 
-  // 7. ENSURE DEEP FULL-BOOK READING CONTENT (6 STRUCTURED SECTIONS)
-  const existingSections = baseMaterial.readContent?.sections || [];
-  let fullBookSections = [...existingSections];
+  // 7. ENSURE DEEP FULL-BOOK READING CONTENT (FULL DETAIL STUDY)
+  const deepGeneratedReading = generateDeepBookReadContent({
+    subjectId,
+    chapterNumber,
+    titleHindi,
+    titleEnglish,
+    authorOrContext: contextStr,
+    bookName,
+    isClass10: false
+  });
 
-  if (fullBookSections.length < 5) {
-    fullBookSections = [
-      {
-        heading: isEnglish
-          ? `1. Foundational Background & Author's Context: ${titleEnglish}`
-          : `1. ऐतिहासिक एवं सैद्धांतिक पृष्ठभूमि: ${titleHindi}`,
-        content: isEnglish
-          ? `Prescribed in ${bookName}, this chapter constitutes a vital part of the BSEB Class 12 syllabus.\n\n• Core Subject Matter: "${contextStr}"\n• Historical/Literary Setting: The piece is situated in the authentic intellectual traditions of the subject.\n• Pedagogical Intent: It equips students to evaluate key principles with precision, fostering critical inquiry and conceptual command required for board examinations.`
-          : `बिहार विद्यालय परीक्षा समिति (BSEB) द्वारा निर्धारित आधिकारिक पाठ्यपुस्तक '${bookName}' का यह अध्याय परीक्षा के दृष्टिकोण से अत्यंत महत्वपूर्ण है।\n\n• मुख्य विषय-वस्तु: "${contextStr}"\n• पृष्ठभूमि एवं संदर्भ: इस अध्याय के माध्यम से विद्यार्थियों को विषय की मूल अवधारणाओं और ऐतिहासिक/वैज्ञानिक संदर्भों से गहराई से परिचित कराया गया है।\n• परीक्षा प्रासंगिकता: विगत वर्षों के प्रश्न-पत्रों का विश्लेषण दर्शाता है कि इस अध्याय की प्रस्तावना और मूल तथ्यों से वस्तुनिष्ठ प्रश्न नियमित रूप से पूछे जाते हैं।`
-      },
-      {
-        heading: isEnglish
-          ? `2. Comprehensive Textbook Narrative & Core Theoretical Exposition`
-          : `2. संपूर्ण पाठ्य विवरण एवं मुख्य सिद्धांत (Full Textual Breakdown)`,
-        content: isEnglish
-          ? `Detailed Analysis of "${titleEnglish}":\n\n1. Central Concepts: The narrative methodically develops the key dimensions of ${contextStr}.\n2. Theoretical Rigor: Each argument or law is demonstrated with logical clarity, step-by-step reasoning, and authentic textual evidence.\n3. Thematic Progression: Moving from basic assumptions to advanced derivations, ensuring that candidates comprehend both the broad framework and minute nuances.`
-          : `अध्याय का संपूर्ण पाठ्य विवरण एवं तार्किक विवेचन:\n\n1. मूल संकल्पना: यह अध्याय '${contextStr}' के सभी महत्वपूर्ण पहलुओं का क्रमिक और प्रामाणिक विश्लेषण प्रस्तुत करता है।\n2. सैद्धांतिक गहराई: प्रत्येक नियम, सिद्धांत अथवा घटना को वैज्ञानिक और तार्किक आधार पर स्पष्ट किया गया है ताकि किसी भी प्रकार का संशय न रहे।\n3. अवधारणात्मक विकास: सरल से कठिन की ओर बढ़ते हुए, यह पाठ विद्यार्थियों को जटिल प्रश्नों को भी आसानी से हल करने में सक्षम बनाता है।`
-      },
-      {
-        heading: isEnglish
-          ? `3. Key Laws, Mathematical Expressions, Derivations & Critical Episodes`
-          : `3. मुख्य नियम, समीकरण, उदाहरण एवं महत्वपूर्ण प्रसंग`,
-        content: isEnglish
-          ? `Essential Equations, Laws, and Quotations:\n\n• Core Formulations: Key formulas, governing laws, and structural relationships that anchor ${contextStr}.\n• Practical Demonstrations: Illustrative cases and standard examples that embody the practical reality of the subject.\n• Frequent Exam Traps: Subtleties in definitions, sign conventions, or contextual quotations where students often lose marks if not careful.`
-          : `महत्वपूर्ण नियम, समीकरण एवं प्रामाणिक उदाहरण:\n\n• आधारभूत नियम/सूत्र: इस अध्याय में प्रतिपादित मुख्य नियमों एवं समीकरणों का विधिवत संकलन जो परीक्षा में सीधे पूछे जाते हैं।\n• व्यावहारिक उदाहरण: पाठ्यपुस्तक के अनुसार दिए गए सजीव उदाहरण विषय-वस्तु को स्पष्ट और रुचिकर बनाते हैं।\n• परीक्षोपयोगी सावधानियां: मात्रक (Units), चिन्ह परिपाटी (Sign Conventions) अथवा ऐतिहासिक तिथियों को त्रुटिरहित लिखना अनिवार्य है।`
-      },
-      {
-        heading: isEnglish
-          ? `4. Critical Dialogues, Quotations & High-Weightage Passages`
-          : `4. महत्वपूर्ण संवाद, उद्धरण, प्रमेय एवं परीक्षा में बार-बार पूछे जाने वाले अंश`,
-        content: isEnglish
-          ? `High-Yield Passage Analysis:\n\n1. Key Textual Extracts: Critical dialogues or theoretical propositions directly quoted in board question papers.\n2. 5-Mark Question Preparation: How to structure long descriptive responses using clear headings, analytical body paragraphs, and cohesive summaries.\n3. Model Exemplars: Proven answer structures that maximize score yield in subjective evaluations.`
-          : `बोर्ड परीक्षा केंद्रित महत्वपूर्ण प्रसंग एवं उद्धरण:\n\n1. प्रमुख उद्धरण व संवाद: पाठ के वे महत्वपूर्ण अंश जिनका संदर्भ देकर बोर्ड परीक्षा में 2-अंकीय सप्रसंग व्याख्या अथवा लघु उत्तरीय प्रश्न पूछे जाते हैं।\n2. 5-अंकीय प्रश्नों की तैयारी: दीर्घ उत्तरीय प्रश्नों को हल करने के लिए शीर्षकों (Subheadings) और बिंदुवार प्रस्तुति का अभ्यास करना आवश्यक है।\n3. परीक्षक की अपेक्षा: उत्तर में विषय की समझ, मौलिक भाषा और प्रामाणिक तथ्यों का संतुलन होने पर शत-प्रतिशत अंक प्राप्त होते हैं।`
-      },
-      {
-        heading: isEnglish
-          ? `5. Subject Glossary, Technical Vocabulary & Formula Directory`
-          : `5. शब्दावली, पारिभाषिक शब्दकोश एवं मुख्य सूत्र संग्रह`,
-        content: isEnglish
-          ? `Technical Glossary for ${titleEnglish}:\n\n• Primary Terminology: Authentic domain terms and their precise textbook definitions.\n• Synonyms & Nuances: Standard usage prescribed by the board examination evaluation scheme.\n• Ready Reckoner: Rapid recall points for last-minute revision before entering the exam hall.`
-          : `पारिभाषिक शब्दावली एवं सूत्र संग्रह:\n\n• मुख्य पारिभाषिक शब्द: पाठ में प्रयुक्त कठिन शब्द अथवा तकनीकी शब्दावली के मानक अर्थ।\n• शब्दार्थ एवं व्याकरण/व्युत्पत्ति: वस्तुनिष्ठ प्रश्नों में पूछे जाने वाले पर्यायवाची, विलोम अथवा संधि/समास (भाषा विषयों में) या मात्रक व विमाएं (विज्ञान विषयों में)।\n• त्वरित पुनरावलोकन: परीक्षा कक्ष में जाने से पूर्व त्वरित दृष्टि डालने हेतु संक्षिप्त सार।`
-      },
-      {
-        heading: isEnglish
-          ? `6. Synthesis, Ethical/Scientific Takeaways & Examination Guidelines`
-          : `6. उपसंहार, निष्कर्ष एवं नैतिक/व्यावहारिक संदेश`,
-        content: isEnglish
-          ? `Final Synthesis:\n\nMastery of "${titleEnglish}" gives students complete authority over this curriculum unit. By consistently practicing the 52 MCQs, 10 Short Answers, and 6 Long Answers provided in this module, students ensure full marks in the upcoming Bihar Board Class 12 Examination.`
-          : `निष्कर्ष एवं अंतिम संदेश:\n\nअतः '${titleHindi}' का यह सघन एवं प्रामाणिक अध्ययन विद्यार्थियों को विषय में पारंगत बनाता है। इस मॉड्यूल में उपलब्ध 50+ वस्तुनिष्ठ प्रश्नों (MCQs), 10 लघु उत्तरीय प्रश्नों तथा 6 दीर्घ उत्तरीय प्रश्नों का नियमित अभ्यास बिहार बोर्ड कक्षा 12वीं की परीक्षा में 95%+ अंक प्राप्त करने का सबसे सशक्त मार्ग है।`
-      }
-    ];
-  }
-
-  const fullBookReadContent = {
-    source: `${bookName} - बिहार विद्यालय परीक्षा समिति (BSEB)`,
-    introduction: baseMaterial.readContent?.introduction || (
-      isEnglish
-        ? `"${titleEnglish}" (Chapter ${chapterNumber}) is prescribed in ${bookName} for BSEB Class 12. Focusing deeply on "${contextStr}", this digital textbook chapter offers comprehensive textual immersion, analytical depth, and rigorous board exam preparation.`
-        : `अध्याय ${chapterNumber}: "${titleHindi}" (${titleEnglish}) बिहार विद्यालय परीक्षा समिति (BSEB) कक्षा 12वीं की आधिकारिक पाठ्यपुस्तक '${bookName}' का अनिवार्य अध्याय है। यह अध्याय मुख्य रूप से "${contextStr}" के सांगोपांग अध्ययन पर केंद्रित है।`
-    ),
-    sections: fullBookSections,
-    conclusion: baseMaterial.readContent?.conclusion || (
-      isEnglish
-        ? `A thorough study of "${titleEnglish}" guarantees complete mastery over both Section A (Objective) and Section B (Subjective) questions in BSEB examinations.`
-        : `अतः '${titleHindi}' का यह संपूर्ण विश्लेषण विद्यार्थियों को बोर्ड परीक्षा में उत्कृष्ट प्रदर्शन करने तथा विषय पर पूर्ण अधिकार प्राप्त करने में सक्षम बनाता है।`
-    )
-  };
+  const fullBookReadContent = baseMaterial.readContent?.sections && baseMaterial.readContent.sections.length >= 6
+    ? baseMaterial.readContent
+    : deepGeneratedReading;
 
   return {
     readContent: fullBookReadContent,

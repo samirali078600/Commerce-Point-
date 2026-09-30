@@ -112,7 +112,7 @@ export const ALL_SUBJECTS_CONFIG: Subject[] = [
     ])
   },
 
-  // 4. CHEMISTRY (10 Core Chapters - NCERT / BSEB)
+  // 4. CHEMISTRY (11 Core Chapters - NCERT / BSEB)
   {
     id: 'chemistry',
     nameEnglish: 'Chemistry',
@@ -122,18 +122,19 @@ export const ALL_SUBJECTS_CONFIG: Subject[] = [
     iconName: 'FlaskConical',
     color: 'teal',
     bookName: 'NCERT / BSTBPC रसायन विज्ञान भाग 1 व 2',
-    totalChapters: 10,
+    totalChapters: 11,
     chapters: buildChapters('chemistry', 'NCERT / BSTBPC रसायन विज्ञान कक्षा 12', [
       { num: 1, id: 'c-ch-1', hindi: 'विलयन', english: 'Solutions', authorOrContext: 'राउल्ट का नियम, अणुसंख्य गुणधर्म, वान्ट हॉफ गुणांक', source: 'NCERT रसायन शास्त्र' },
       { num: 2, id: 'c-ch-2', hindi: 'वैद्युतरसायन', english: 'Electrochemistry', authorOrContext: 'डेनियल सेल, नर्नस्ट समीकरण, कोलराउश नियम, फैराडे नियम', source: 'NCERT रसायन शास्त्र' },
       { num: 3, id: 'c-ch-3', hindi: 'रासायनिक बलगतिकी', english: 'Chemical Kinetics', authorOrContext: 'अभिक्रिया की कोटि, प्रथम कोटि समाकलित वेग समीकरण', source: 'NCERT रसायन शास्त्र' },
-      { num: 4, id: 'c-ch-4', hindi: 'd एवं f ब्लॉक के तत्व', english: 'The d- and f-Block Elements', authorOrContext: 'संक्रमण तत्व गुण, लैन्थेनाइड आकुंचन', source: 'NCERT रसायन शास्त्र' },
-      { num: 5, id: 'c-ch-5', hindi: 'उपसहसंयोजन यौगिक', english: 'Coordination Compounds', authorOrContext: 'IUPAC नामकरण, वर्नर सिद्धांत, संयोजकता बंध सिद्धांत (VBT)', source: 'NCERT रसायन शास्त्र' },
-      { num: 6, id: 'c-ch-6', hindi: 'हैलोऐल्केन तथा हैलोऐरीन', english: 'Haloalkanes and Haloarenes', authorOrContext: 'SN1 तथा SN2 क्रियाविधि, वुर्ट्ज़ व फिटिग अभिक्रिया', source: 'NCERT रसायन शास्त्र' },
-      { num: 7, id: 'c-ch-7', hindi: 'ऐल्कोहॉल, फ़ीनॉल एवं ईथर', english: 'Alcohols, Phenols and Ethers', authorOrContext: 'ल्यूकास परीक्षण, कोल्बे व रीमर-टीमैन अभिक्रिया, विलियमसन संश्लेषण', source: 'NCERT रसायन शास्त्र' },
-      { num: 8, id: 'c-ch-8', hindi: 'ऐल्डिहाइड, कीटोन एवं कार्बोक्सिलिक अम्ल', english: 'Aldehydes, Ketones & Carboxylic Acids', authorOrContext: 'कैनिजारो अभिक्रिया, ऐल्डोल संघनन, टॉलेन व फेहलिंग परीक्षण', source: 'NCERT रसायन शास्त्र' },
-      { num: 9, id: 'c-ch-9', hindi: 'ऐमीन (नाइट्रोजनयुक्त कार्बनिक यौगिक)', english: 'Amines', authorOrContext: 'हॉफमैन ब्रोमामाइड निम्नीकरण, कार्बिलऐमीन परीक्षण, हिंसबर्ग अभिकर्मक', source: 'NCERT रसायन शास्त्र' },
-      { num: 10, id: 'c-ch-10', hindi: 'जैव-अणु', english: 'Biomolecules', authorOrContext: 'कार्बोहाइड्रेट, ग्लूकोज संरचना, प्रोटीन, डीएनए व आरएनए', source: 'NCERT रसायन शास्त्र' }
+      { num: 4, id: 'c-ch-4', hindi: 'p-ब्लॉक के तत्व', english: 'The p-Block Elements', authorOrContext: 'वर्ग 15, 16, 17, 18, हैबर विधि, ओस्टवाल्ड विधि, संपर्क विधि, जीनॉन यौगिक', source: 'NCERT रसायन शास्त्र' },
+      { num: 5, id: 'c-ch-5', hindi: 'd एवं f ब्लॉक के तत्व', english: 'The d- and f-Block Elements', authorOrContext: 'संक्रमण तत्व गुण, लैन्थेनाइड आकुंचन', source: 'NCERT रसायन शास्त्र' },
+      { num: 6, id: 'c-ch-6', hindi: 'उपसहसंयोजन यौगिक', english: 'Coordination Compounds', authorOrContext: 'IUPAC नामकरण, वर्नर सिद्धांत, संयोजकता बंध सिद्धांत (VBT)', source: 'NCERT रसायन शास्त्र' },
+      { num: 7, id: 'c-ch-7', hindi: 'हैलोऐल्केन तथा हैलोऐरीन', english: 'Haloalkanes and Haloarenes', authorOrContext: 'SN1 तथा SN2 क्रियाविधि, वुर्ट्ज़ व फिटिग अभिक्रिया', source: 'NCERT रसायन शास्त्र' },
+      { num: 8, id: 'c-ch-8', hindi: 'ऐल्कोहॉल, फ़ीनॉल एवं ईथर', english: 'Alcohols, Phenols and Ethers', authorOrContext: 'ल्यूकास परीक्षण, कोल्बे व रीमर-टीमैन अभिक्रिया, विलियमसन संश्लेषण', source: 'NCERT रसायन शास्त्र' },
+      { num: 9, id: 'c-ch-9', hindi: 'ऐल्डिहाइड, कीटोन एवं कार्बोक्सिलिक अम्ल', english: 'Aldehydes, Ketones & Carboxylic Acids', authorOrContext: 'कैनिजारो अभिक्रिया, ऐल्डोल संघनन, टॉलेन व फेहलिंग परीक्षण', source: 'NCERT रसायन शास्त्र' },
+      { num: 10, id: 'c-ch-10', hindi: 'ऐमीन (नाइट्रोजनयुक्त कार्बनिक यौगिक)', english: 'Amines', authorOrContext: 'हॉफमैन ब्रोमामाइड निम्नीकरण, कार्बिलऐमीन परीक्षण, हिंसबर्ग अभिकर्मक', source: 'NCERT रसायन शास्त्र' },
+      { num: 11, id: 'c-ch-11', hindi: 'जैव-अणु', english: 'Biomolecules', authorOrContext: 'कार्बोहाइड्रेट, ग्लूकोज संरचना, प्रोटीन, डीएनए व आरएनए', source: 'NCERT रसायन शास्त्र' }
     ])
   },
 

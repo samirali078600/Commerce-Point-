@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { PYQPaper, Subject } from '../types';
+import { PYQPaper, Subject, AppLanguage } from '../types';
 import { 
   AlertCircle, 
   ArrowLeft, 
@@ -21,6 +21,7 @@ interface PYQPaperViewProps {
   year: number;
   subject: Subject;
   paper: PYQPaper | null;
+  language?: AppLanguage;
   onBack: () => void;
   onSelectVerifiedPaper?: (year: number, subjectId: string) => void;
 }
@@ -29,9 +30,11 @@ export const PYQPaperView: React.FC<PYQPaperViewProps> = ({
   year,
   subject,
   paper,
+  language = 'hi',
   onBack,
   onSelectVerifiedPaper
 }) => {
+  const isHi = language === 'hi';
   const [viewMode, setViewMode] = useState<'slide' | 'list'>('slide');
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [showAllAnswers, setShowAllAnswers] = useState(false);
@@ -144,7 +147,7 @@ export const PYQPaperView: React.FC<PYQPaperViewProps> = ({
           className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>← Back to Subjects (विषय सूची)</span>
+          <span>{isHi ? '← Back to Subjects (विषय सूची)' : '← Back to Subjects'}</span>
         </button>
 
         <div className="flex items-center gap-2">
@@ -156,7 +159,7 @@ export const PYQPaperView: React.FC<PYQPaperViewProps> = ({
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 text-xs transition-colors cursor-pointer shadow-2xs"
           >
             {showAllAnswers ? <EyeOff className="w-3.5 h-3.5 text-amber-700" /> : <Eye className="w-3.5 h-3.5 text-blue-700" />}
-            <span>{showAllAnswers ? 'सभी उत्तर छिपाएं' : 'सभी उत्तर देखें'}</span>
+            <span>{showAllAnswers ? (isHi ? 'सभी उत्तर छिपाएं' : 'Hide All Answers') : (isHi ? 'सभी उत्तर देखें' : 'Show All Answers')}</span>
           </button>
         </div>
       </div>
@@ -177,7 +180,7 @@ export const PYQPaperView: React.FC<PYQPaperViewProps> = ({
                   : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
               }`}
             >
-              <span>All Questions</span>
+              <span>{isHi ? 'सभी प्रश्न' : 'All Questions'}</span>
               <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
                 activeSectionFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-800'
               }`}>
@@ -194,7 +197,7 @@ export const PYQPaperView: React.FC<PYQPaperViewProps> = ({
                   : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
               }`}
             >
-              <span>Section A (Objective)</span>
+              <span>{isHi ? 'खण्ड-अ (Objective)' : 'Section A (Objective)'}</span>
               <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
                 activeSectionFilter === 'sectionA' ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-800'
               }`}>
@@ -211,7 +214,7 @@ export const PYQPaperView: React.FC<PYQPaperViewProps> = ({
                   : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
               }`}
             >
-              <span>Section B (All)</span>
+              <span>{isHi ? 'खण्ड-ब सम्पूर्ण' : 'Section B (All)'}</span>
               <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
                 activeSectionFilter === 'sectionB' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'
               }`}>
@@ -228,7 +231,7 @@ export const PYQPaperView: React.FC<PYQPaperViewProps> = ({
                   : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
               }`}
             >
-              <span>लघु उत्तरीय 2M</span>
+              <span>{isHi ? 'लघु उत्तरीय (2M)' : 'Short Answer (2M)'}</span>
               <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
                 activeSectionFilter === 'sectionB-short' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-900'
               }`}>
@@ -245,7 +248,7 @@ export const PYQPaperView: React.FC<PYQPaperViewProps> = ({
                   : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
               }`}
             >
-              <span>दीर्घ उत्तरीय 5M</span>
+              <span>{isHi ? 'दीर्घ उत्तरीय (5M)' : 'Long Answer (5M)'}</span>
               <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
                 activeSectionFilter === 'sectionB-long' ? 'bg-white/20 text-white' : 'bg-purple-100 text-purple-900'
               }`}>
@@ -306,7 +309,7 @@ export const PYQPaperView: React.FC<PYQPaperViewProps> = ({
                   {currentQuestion.options && currentQuestion.options.length > 0 && (
                     <div className="space-y-2.5 pt-2">
                       <div className="text-xs font-semibold text-slate-500 flex items-center justify-between">
-                        <span>विकल्प चुनें (Select Option to Check):</span>
+                        <span>{isHi ? 'विकल्प चुनें (Select Option to Check):' : 'Select Option to Test Yourself:'}</span>
                         {userSelectedOptions[currentQuestion.id] && (
                           <button
                             onClick={() => {
@@ -318,7 +321,7 @@ export const PYQPaperView: React.FC<PYQPaperViewProps> = ({
                             }}
                             className="text-slate-400 hover:text-slate-600 flex items-center gap-1 text-[11px] cursor-pointer"
                           >
-                            <RotateCcw className="w-3 h-3" /> रीसेट
+                            <RotateCcw className="w-3 h-3" /> {isHi ? 'रीसेट' : 'Reset'}
                           </button>
                         )}
                       </div>
@@ -378,12 +381,12 @@ export const PYQPaperView: React.FC<PYQPaperViewProps> = ({
                         {showAllAnswers || revealedQuestions[currentQuestion.id] ? (
                           <>
                             <EyeOff className="w-3.5 h-3.5 text-blue-600" />
-                            <span>उत्तर छिपाएं (Hide Solution)</span>
+                            <span>{isHi ? 'उत्तर छिपाएं (Hide Solution)' : 'Hide Solution'}</span>
                           </>
                         ) : (
                           <>
                             <Eye className="w-3.5 h-3.5 text-blue-600" />
-                            <span>उत्तर व व्याख्या देखें (View Solution)</span>
+                            <span>{isHi ? 'उत्तर व व्याख्या देखें (View Solution)' : 'View Solution & Explanation'}</span>
                           </>
                         )}
                       </button>
@@ -392,10 +395,10 @@ export const PYQPaperView: React.FC<PYQPaperViewProps> = ({
                         <span className="text-xs font-semibold text-slate-500">
                           {showAllAnswers || revealedQuestions[currentQuestion.id] ? (
                             <span className="text-emerald-700 font-bold">
-                              सही उत्तर: विकल्प ({currentQuestion.correctOption})
+                              {isHi ? `सही उत्तर: विकल्प (${currentQuestion.correctOption})` : `Correct Option: (${currentQuestion.correctOption})`}
                             </span>
                           ) : (
-                            'उत्तर कुंजी उपलब्ध है'
+                            isHi ? 'उत्तर कुंजी उपलब्ध है' : 'Answer Key Available'
                           )}
                         </span>
                       )}
@@ -405,7 +408,7 @@ export const PYQPaperView: React.FC<PYQPaperViewProps> = ({
                       <div className="p-4 rounded-xl bg-emerald-50/80 border border-emerald-200 text-xs text-emerald-950 space-y-1.5 animate-fadeIn">
                         <div className="flex items-center gap-1.5 text-emerald-900 font-bold uppercase tracking-wider text-[11px]">
                           <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                          <span>आधिकारिक उत्तर कुंजी एवं प्रामाणिक समाधान:</span>
+                          <span>{isHi ? 'आधिकारिक उत्तर कुंजी एवं प्रामाणिक समाधान:' : 'Verified Solution & Answer Key:'}</span>
                         </div>
                         <div className="whitespace-pre-line leading-relaxed text-slate-800 pt-1">
                           {currentQuestion.answerKey}
@@ -429,7 +432,7 @@ export const PYQPaperView: React.FC<PYQPaperViewProps> = ({
                       }`}
                     >
                       <ChevronLeft className="w-4 h-4" />
-                      <span>पिछला (Previous)</span>
+                      <span>{isHi ? 'पिछला (Previous)' : 'Previous'}</span>
                     </button>
 
                     <button
@@ -441,7 +444,7 @@ export const PYQPaperView: React.FC<PYQPaperViewProps> = ({
                           : 'bg-amber-600 text-white hover:bg-amber-700 shadow-2xs'
                       }`}
                     >
-                      <span>अगला (Next)</span>
+                      <span>{isHi ? 'अगला (Next)' : 'Next'}</span>
                       <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
@@ -449,16 +452,16 @@ export const PYQPaperView: React.FC<PYQPaperViewProps> = ({
                   {/* Quick-Jump Question Numbers in a Sleek Mini-Slider + Dropdown */}
                   <div className="flex items-center gap-2 max-w-full">
                     <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="text-xs text-slate-500 font-medium hidden sm:inline">प्रश्न:</span>
+                      <span className="text-xs text-slate-500 font-medium hidden sm:inline">{isHi ? 'प्रश्न:' : 'Q:'}</span>
                       <select
                         value={activeIndex}
                         onChange={(e) => setCurrentSlideIndex(Number(e.target.value))}
                         className="bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
-                        aria-label="प्रश्न चुनें"
+                        aria-label={isHi ? "प्रश्न चुनें" : "Select Question"}
                       >
                         {filteredQuestions.map((q, idx) => (
                           <option key={q.id} value={idx}>
-                            Q.{q.number} ({q.section.includes('Objective') ? 'Sec A' : q.section.includes('Short') ? 'Sec B लघु' : 'Sec B दीर्घ'})
+                            Q.{q.number} ({q.section.includes('Objective') ? 'Sec A' : q.section.includes('Short') ? (isHi ? 'Sec B लघु' : 'Sec B Short') : (isHi ? 'Sec B दीर्घ' : 'Sec B Long')})
                           </option>
                         ))}
                       </select>
@@ -548,14 +551,14 @@ export const PYQPaperView: React.FC<PYQPaperViewProps> = ({
                     className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
                   >
                     {isRevealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                    <span>{isRevealed ? 'Hide Answer Key' : 'View Answer Key'}</span>
+                    <span>{isRevealed ? (isHi ? 'उत्तर छिपाएं' : 'Hide Answer Key') : (isHi ? 'उत्तर कुंजी देखें' : 'View Answer Key')}</span>
                   </button>
                 </div>
 
                 {isRevealed && q.answerKey && (
                   <div className="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200 text-xs text-emerald-950 space-y-1">
                     <strong className="block text-emerald-900 font-bold uppercase tracking-wider text-[10px]">
-                      आधिकारिक उत्तर कुंजी / Solution:
+                      {isHi ? 'आधिकारिक उत्तर कुंजी / प्रामाणिक समाधान:' : 'Verified Answer Key & Solution:'}
                     </strong>
                     <div className="whitespace-pre-line leading-relaxed">
                       {q.answerKey}

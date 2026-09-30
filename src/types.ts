@@ -1,6 +1,6 @@
 export type AppLanguage = 'hi' | 'en';
 
-export type StreamType = 'all' | 'science' | 'arts' | 'commerce';
+export type StreamType = 'all' | 'science' | 'arts' | 'commerce' | 'matric' | 'general';
 
 export interface MCQOption {
   id: 'A' | 'B' | 'C' | 'D';
@@ -88,10 +88,11 @@ export interface Chapter {
 
 export interface Subject {
   id: string;
+  classLevel?: 10 | 12;
   nameEnglish: string;
   nameHindi: string;
   code?: string;
-  stream: ('science' | 'arts' | 'commerce')[];
+  stream: ('science' | 'arts' | 'commerce' | 'matric' | 'general')[];
   iconName: string;
   color: string;
   bookName: string;
@@ -114,6 +115,7 @@ export interface PYQPaper {
   id: string;
   year: number;
   subjectId: string;
+  classLevel?: 10 | 12;
   subjectNameHindi: string;
   subjectNameEnglish: string;
   paperType: 'Annual Examination' | 'Model Question Paper' | 'Compartmental';
@@ -127,12 +129,12 @@ export interface PYQPaper {
 
 export type ViewMode = 
   | { type: 'home' }
-  | { type: 'subjects'; stream?: StreamType }
-  | { type: 'subject'; subjectId: string }
-  | { type: 'chapter'; subjectId: string; chapterId: string; initialTab?: ChapterTab }
-  | { type: 'pyq-years' }
-  | { type: 'pyq-subjects'; year: number }
-  | { type: 'pyq-paper'; year: number; subjectId: string }
+  | { type: 'subjects'; stream?: StreamType; classLevel?: 10 | 12 }
+  | { type: 'subject'; subjectId: string; classLevel?: 10 | 12; subDiscipline?: string }
+  | { type: 'chapter'; subjectId: string; chapterId: string; initialTab?: ChapterTab; classLevel?: 10 | 12 }
+  | { type: 'pyq-years'; classLevel?: 10 | 12 }
+  | { type: 'pyq-subjects'; year: number; classLevel?: 10 | 12 }
+  | { type: 'pyq-paper'; year: number; subjectId: string; classLevel?: 10 | 12 }
   | { type: 'learn-english'; lessonId?: string }
   | { type: 'oxford-translation'; chapterNumber?: number; initialTab?: 'rules' | 'exercises' | 'vocabulary' | 'verb-forms' | 'quiz' };
 

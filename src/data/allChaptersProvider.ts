@@ -1,5 +1,6 @@
 import { ChapterStudyMaterial, MCQQuestion, ShortQuestion, LongQuestion, FormulaOrDefinition } from '../types';
 import { enrichChapterWithFiftyPlus } from './curriculum/fiftyPlusGenerator';
+import { generateDeepBookReadContent } from './curriculum/deepBookReaderGenerator';
 import { hindiChapter1Material } from './chapterDataHindi';
 import { hindiChapter2Material, hindiChapter4Material } from './hindiChapters';
 import { HINDI_CHAPTERS_MAP } from './chaptersHindi';
@@ -9,6 +10,7 @@ import { physicsChapter1Material } from './chapterDataPhysics';
 import { physicsChapter2Material } from './physicsChapters';
 import { chemistryChapter1Material } from './chapterDataChemistry';
 import { chemistryChapter2Material } from './chemistryChapters';
+import { chemistryPBlockMaterial } from './chapterDataChemistryPBlock';
 import { mathsChapter1Material } from './chapterDataMaths';
 import { mathsChapter2Material } from './mathsChapters';
 import { biologyChapter1Material } from './biologyChapters';
@@ -23,6 +25,8 @@ import { HINDI_DEEP_CHAPTERS } from './curriculum/hindiKnowledge';
 import { ENGLISH_DEEP_CHAPTERS } from './curriculum/englishKnowledge';
 import { SCIENCE_DEEP_CHAPTERS } from './curriculum/scienceKnowledge';
 import { ARTS_COMMERCE_DEEP_CHAPTERS } from './curriculum/artsCommerceKnowledge';
+
+import { getClass10ChapterMaterial } from './class10/class10ChaptersProvider';
 
 // Handcrafted and Deep Curriculum Registry
 const SPECIFIC_CHAPTERS: Record<string, ChapterStudyMaterial> = {
@@ -54,6 +58,9 @@ const SPECIFIC_CHAPTERS: Record<string, ChapterStudyMaterial> = {
   'chemistry-1': chemistryChapter1Material,
   'chemistry-2': chemistryChapter2Material,
   'chemistry-3': SCIENCE_DEEP_CHAPTERS['chemistry-3'],
+  'chemistry-4': chemistryPBlockMaterial,
+  'chemistry-pblock': chemistryPBlockMaterial,
+  'c-ch-4': chemistryPBlockMaterial,
 
   // Maths
   'mathematics-1': mathsChapter1Material,
@@ -102,11 +109,24 @@ export function getChapterMaterial(
   authorOrContext: string = '',
   bookName: string = 'BSTBPC / NCERT Class 12'
 ): ChapterStudyMaterial {
+  if (subjectId.startsWith('class10-')) {
+    return getClass10ChapterMaterial(
+      subjectId,
+      chapterId,
+      chapterNumber,
+      titleHindi,
+      titleEnglish,
+      authorOrContext,
+      bookName
+    );
+  }
+
   // Check if specific handcrafted material exists
   const key = `${subjectId}-${chapterNumber}`;
-  if (SPECIFIC_CHAPTERS[key]) {
+  const matched = SPECIFIC_CHAPTERS[key] || SPECIFIC_CHAPTERS[chapterId];
+  if (matched) {
     return enrichChapterWithFiftyPlus(
-      SPECIFIC_CHAPTERS[key],
+      matched,
       subjectId,
       chapterNumber,
       titleHindi,
@@ -122,42 +142,16 @@ export function getChapterMaterial(
   const isCommerce = ['accountancy', 'business-studies'].includes(subjectId);
   const contextDesc = authorOrContext ? authorOrContext : titleHindi;
 
-  // 1. Full Book Reading Content (Deeply detailed)
-  const readContent = {
-    source: `${bookName} - कक्षा 12 (बिहार विद्यालय परीक्षा समिति आधिकारिक पाठ्यक्रम)`,
-    introduction: isEnglish
-      ? `"${titleEnglish}" is chapter ${chapterNumber} of Class 12 English prescribed in the Bihar School Examination Board (BSEB) syllabus. Highlighting "${contextDesc}", this text provides profound insights into literary elegance, historical relevance, and core thematic values essential for scoring 95%+ in BSEB board examinations.`
-      : `अध्याय ${chapterNumber}: "${titleHindi}" (${titleEnglish}) बिहार विद्यालय परीक्षा समिति (BSEB) कक्षा 12वीं के आधिकारिक पाठ्यक्रम का एक अत्यंत महत्वपूर्ण अध्याय है। इस अध्याय में मुख्य रूप से "${contextDesc}" का विस्तृत व प्रामाणिक अध्ययन कराया गया है। बोर्ड परीक्षा के दृष्टिकोण से यह अध्याय वस्तुनिष्ठ (MCQ), 2-अंकीय लघु उत्तरीय एवं 5-अंकीय दीर्घ उत्तरीय प्रश्नों के लिए अनिवार्य रूप से 8 से 12 अंकों का योगदान देता है।`,
-    sections: [
-      {
-        heading: isEnglish
-          ? `1. Background, Core Themes & Context of "${titleEnglish}"`
-          : `1. मूल अवधारणा एवं पृष्ठभूमि: ${titleHindi}`,
-        content: isEnglish
-          ? `Contextual Analysis:\n• The text focuses on: ${contextDesc}.\n• Key Argument: The piece critically engages the reader with moral, social, or philosophical realities.\n• Language & Diction: The author employs compelling rhetorical devices, authentic vocabulary, and structured syntax that regularly feature in BSEB objective and short answer sections.`
-          : `अध्याय के मुख्य सैद्धांतिक आधार एवं पृष्ठभूमि:\n\n• प्रमुख संदर्भ व विषय-वस्तु: "${contextDesc}"\n• संकल्पना की महत्ता: इस अध्याय के माध्यम से विद्यार्थियों को विषय की व्यावहारिक एवं सैद्धांतिक गहराई से परिचित कराया गया है।\n• परीक्षा प्रासंगिकता: बिहार बोर्ड में पिछले 15 वर्षों के प्रश्न-पत्रों का विश्लेषण दर्शाता है कि इस अध्याय के मूल सिद्धांतों और परिभाषाओं से सीधे प्रश्न पूछे जाते हैं।`
-      },
-      {
-        heading: isEnglish
-          ? `2. In-Depth Textual Breakdown & Critical Highlights`
-          : `2. विस्तृत विश्लेषण एवं मुख्य बिंदु (Detailed Breakdown)`,
-        content: isEnglish
-          ? `Essential Takeaways for ${titleEnglish}:\n\n1. Central Idea: The chapter portrays significant human experiences and logical principles related to "${contextDesc}".\n2. Analytical Perspective: Critical examination of the text enables students to answer comprehension and 5-mark explanatory questions with precision.\n3. Recurring Exam Patterns: Quotations, specific dates, character traits, and thematic keywords must be memorized thoroughly.`
-          : `अध्याय के महत्वपूर्ण घटक एवं नियम:\n\n1. मुख्य सिद्धांत एवं तथ्य: ${contextDesc} से संबंधित सभी नियमों, घटनाओं अथवा समीकरणों को क्रमबद्ध रूप से समझना आवश्यक है।\n2. व्यावहारिक अनुप्रयोग: यह अवधारणा न केवल बोर्ड परीक्षा बल्कि आगामी प्रतियोगी परीक्षाओं में भी बुनियादी आधार का कार्य करती है।\n3. महत्वपूर्ण सावधानियां: वस्तुनिष्ठ प्रश्नों को हल करते समय प्रमुख तकनीकी शब्दों एवं परिभाषाओं की शुद्धता पर विशेष ध्यान दें।`
-      },
-      {
-        heading: isEnglish
-          ? `3. BSEB Examination Strategy & Model Presentation`
-          : `3. बिहार बोर्ड परीक्षा विशेष रणनीति एवं अंक विभाजन`,
-        content: isEnglish
-          ? `Examiner's Guidelines for BSEB Class 12:\n• Section A (MCQs): Focus strictly on author background, key terminology, and central facts.\n• Section B (Short Q&A - 2 Marks): Provide direct, point-wise answers in 30-50 words.\n• Section B (Long Q&A - 5 Marks): Structure answers into an Introduction, Subheadings with bullet points, and a decisive Conclusion.`
-          : `परीक्षोपयोगी निर्देश (BSEB Pattern):\n\n• खंड 'अ' (वस्तुनिष्ठ प्रश्न): 50 अंक के वस्तुनिष्ठ प्रश्नों में तिथियां, रचनाकार का नाम, सूत्र एवं विशिष्ट परिभाषाएं पूछी जाती हैं।\n• खंड 'ब' (लघु उत्तरीय प्रश्न - 2 अंक): 30 से 50 शब्दों में संतुलित और सटीक उत्तर लिखें।\n• खंड 'ब' (दीर्घ उत्तरीय प्रश्न - 5 अंक): उत्तर को प्रस्तावना, मुख्य बिंदु (शीर्षकों सहित) और निष्कर्ष में विभाजित करके लिखें ताकि 100% अंक प्राप्त हो सकें।`
-      }
-    ],
-    conclusion: isEnglish
-      ? `A rigorous revision of "${titleEnglish}" gives students absolute mastery over the chapter, ensuring full marks in both objective and descriptive sections.`
-      : `अतः '${titleHindi}' का यह संपूर्ण विश्लेषण विद्यार्थियों को बोर्ड परीक्षा में उत्कृष्ट प्रदर्शन करने तथा विषय पर पूर्ण अधिकार प्राप्त करने में सक्षम बनाता है।`
-  };
+  // 1. Full Book Reading Content (Exhaustive & In-Depth Study)
+  const readContent = generateDeepBookReadContent({
+    subjectId,
+    chapterNumber,
+    titleHindi,
+    titleEnglish,
+    authorOrContext: contextDesc,
+    bookName,
+    isClass10: false
+  });
 
   // 2. MCQs (5 realistic board questions per chapter)
   const mcqs: MCQQuestion[] = [

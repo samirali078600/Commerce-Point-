@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ViewMode, ChapterTab, Subject, Chapter, AppLanguage } from './types';
-import { SUBJECTS_DATA } from './data/subjects';
+import { SUBJECTS_DATA, CLASS_10_SUBJECTS, CLASS_12_SUBJECTS } from './data/subjects';
 import { getPaperForYearAndSubject } from './data/pyqData';
 import { Header } from './components/Header';
 import { HomePage } from './components/HomePage';
@@ -68,21 +68,29 @@ export default function App() {
       case 'subjects':
         setViewMode({ type: 'home' });
         break;
-      case 'subject':
-        setViewMode({ type: 'subjects' });
+      case 'subject': {
+        const cLevel = viewMode.classLevel || currentSubject?.classLevel || 12;
+        setViewMode({ type: 'subjects', classLevel: cLevel });
         break;
-      case 'chapter':
-        setViewMode({ type: 'subject', subjectId: viewMode.subjectId });
+      }
+      case 'chapter': {
+        const cLevel = viewMode.classLevel || currentSubject?.classLevel || 12;
+        setViewMode({ type: 'subject', subjectId: viewMode.subjectId, classLevel: cLevel });
         break;
+      }
       case 'pyq-years':
         setViewMode({ type: 'home' });
         break;
-      case 'pyq-subjects':
-        setViewMode({ type: 'pyq-years' });
+      case 'pyq-subjects': {
+        const cLevel = viewMode.classLevel || 12;
+        setViewMode({ type: 'pyq-years', classLevel: cLevel });
         break;
-      case 'pyq-paper':
-        setViewMode({ type: 'pyq-subjects', year: viewMode.year });
+      }
+      case 'pyq-paper': {
+        const cLevel = viewMode.classLevel || currentSubject?.classLevel || 12;
+        setViewMode({ type: 'pyq-subjects', year: viewMode.year, classLevel: cLevel });
         break;
+      }
       case 'learn-english':
         setViewMode({ type: 'home' });
         break;
@@ -124,36 +132,68 @@ export default function App() {
           title: isHi ? 'गुरुकुल राजेश सर (Gurukul Rajesh Sir)' : 'Gurukul Rajesh Sir',
           subtitle: ''
         };
-      case 'subjects':
+      case 'subjects': {
+        const isC10 = viewMode.classLevel === 10;
         return {
-          title: isHi ? 'कक्षा 12 विषय (Class 12 Subject)' : 'Class 12 Subject',
-          subtitle: isHi ? 'विज्ञान, कला एवं वाणिज्य के सभी अध्याय' : 'Science, Arts & Commerce Curriculum'
+          title: isC10
+            ? (isHi ? 'कक्षा 10 विषय (Class 10 Subject)' : 'Class 10 Subject')
+            : (isHi ? 'कक्षा 12 विषय (Class 12 Subject)' : 'Class 12 Subject'),
+          subtitle: isC10
+            ? (isHi ? 'गणित, विज्ञान, सामाजिक विज्ञान एवं भाषा के सभी 122 अध्याय' : 'Maths, Science, SST & Languages (122 Chapters)')
+            : (isHi ? 'विज्ञान, कला एवं वाणिज्य के सभी अध्याय' : 'Science, Arts & Commerce Curriculum')
         };
-      case 'subject':
+      }
+      case 'subject': {
+        const isC10 = (viewMode.classLevel || currentSubject?.classLevel) === 10;
         return {
           title: currentSubject ? (isHi ? currentSubject.nameHindi : currentSubject.nameEnglish) : 'Subject',
-          subtitle: currentSubject ? (isHi ? `${currentSubject.nameEnglish} • अध्याय सूची` : `${currentSubject.nameHindi} • Chapters`) : ''
+          subtitle: currentSubject
+            ? (isHi
+                ? `${isC10 ? 'कक्षा 10' : 'कक्षा 12'} • ${currentSubject.nameEnglish} • अध्याय सूची`
+                : `${isC10 ? 'Class 10' : 'Class 12'} • ${currentSubject.nameHindi} • Chapters`)
+            : ''
         };
-      case 'chapter':
+      }
+      case 'chapter': {
+        const isC10 = (viewMode.classLevel || currentSubject?.classLevel) === 10;
         return {
-          title: currentChapter ? (isHi ? currentChapter.titleHindi : currentChapter.titleEnglish) : 'Chapter',
-          subtitle: currentSubject ? `${currentSubject.nameEnglish} • Ch ${currentChapter?.chapterNumber}` : ''
+          title: currentChapter
+            ? `${currentChapter.titleHindi}${currentChapter.titleEnglish && currentChapter.titleEnglish.trim() !== currentChapter.titleHindi.trim() ? ` (${currentChapter.titleEnglish})` : ''}`
+            : 'Chapter',
+          subtitle: currentSubject
+            ? `${isC10 ? 'कक्षा 10' : 'कक्षा 12'} • ${currentSubject.nameEnglish} • Ch ${currentChapter?.chapterNumber}`
+            : ''
         };
-      case 'pyq-years':
+      }
+      case 'pyq-years': {
+        const isC10 = viewMode.classLevel === 10;
         return {
-          title: isHi ? 'कक्षा 12 प्रश्न बैंक 2010 से 2026' : 'Class 12 Question Bank 2010 to 2026',
-          subtitle: isHi ? 'बिहार बोर्ड विगत 17 वर्षों के प्रश्न पत्र' : 'BSEB 17 Years Question Papers'
+          title: isC10
+            ? (isHi ? 'कक्षा 10 प्रश्न बैंक 2010 से 2026' : 'Class 10 Question Bank 2010 to 2026')
+            : (isHi ? 'कक्षा 12 प्रश्न बैंक 2010 से 2026' : 'Class 12 Question Bank 2010 to 2026'),
+          subtitle: isC10
+            ? (isHi ? 'बिहार बोर्ड मैट्रिक विगत 17 वर्षों के प्रश्न पत्र' : 'BSEB Matric 17 Years Question Papers')
+            : (isHi ? 'बिहार बोर्ड विगत 17 वर्षों के प्रश्न पत्र' : 'BSEB 17 Years Question Papers')
         };
-      case 'pyq-subjects':
+      }
+      case 'pyq-subjects': {
+        const isC10 = viewMode.classLevel === 10;
         return {
-          title: isHi ? `बोर्ड परीक्षा वर्ष ${viewMode.year}` : `Exam Year ${viewMode.year}`,
+          title: isHi
+            ? `${isC10 ? 'मैट्रिक' : 'इंटर'} बोर्ड परीक्षा वर्ष ${viewMode.year}`
+            : `${isC10 ? 'Matric' : 'Inter'} Exam Year ${viewMode.year}`,
           subtitle: isHi ? 'विषय चुनें' : 'Select Subject Paper'
         };
-      case 'pyq-paper':
+      }
+      case 'pyq-paper': {
+        const isC10 = (viewMode.classLevel || currentSubject?.classLevel) === 10;
         return {
           title: `${currentSubject?.nameEnglish || 'Subject'} (${viewMode.year})`,
-          subtitle: isHi ? 'BSEB मूल प्रश्न पत्र एवं उत्तर कुंजी' : 'BSEB Question Paper with Answer Key'
+          subtitle: isHi
+            ? `BSEB ${isC10 ? 'मैट्रिक' : 'इंटर'} मूल प्रश्न पत्र एवं उत्तर कुंजी`
+            : `BSEB ${isC10 ? 'Matric' : 'Inter'} Question Paper with Answer Key`
         };
+      }
       case 'learn-english':
         return {
           title: 'Learn English & Spoken',
@@ -167,7 +207,7 @@ export default function App() {
       default:
         return {
           title: isHi ? 'गुरुकुल राजेश सर (Gurukul Rajesh Sir)' : 'Gurukul Rajesh Sir',
-          subtitle: 'BSEB Class 12'
+          subtitle: 'BSEB Class 10 & 12'
         };
     }
   }, [viewMode, currentSubject, currentChapter, language]);
@@ -193,8 +233,10 @@ export default function App() {
           <HomePage
             language={language}
             onToggleLanguage={handleToggleLanguage}
-            onSelectSubjects={() => setViewMode({ type: 'subjects' })}
-            onSelectPYQ={() => setViewMode({ type: 'pyq-years' })}
+            onSelectClass10Subjects={() => setViewMode({ type: 'subjects', classLevel: 10 })}
+            onSelectClass10PYQ={() => setViewMode({ type: 'pyq-years', classLevel: 10 })}
+            onSelectClass12Subjects={() => setViewMode({ type: 'subjects', classLevel: 12 })}
+            onSelectClass12PYQ={() => setViewMode({ type: 'pyq-years', classLevel: 12 })}
             onSelectEnglish={() => setViewMode({ type: 'learn-english' })}
             onSelectOxford={() => setViewMode({ type: 'oxford-translation' })}
           />
@@ -203,9 +245,18 @@ export default function App() {
         {/* 2. SUBJECTS LIST VIEW */}
         {viewMode.type === 'subjects' && (
           <SubjectListView
-            subjects={SUBJECTS_DATA}
+            subjects={viewMode.classLevel === 10 ? CLASS_10_SUBJECTS : CLASS_12_SUBJECTS}
+            classLevel={viewMode.classLevel || 12}
             initialStream={viewMode.stream || 'all'}
-            onSelectSubject={(subjectId) => setViewMode({ type: 'subject', subjectId })}
+            language={language}
+            onSelectSubject={(subjectId, subDiscipline) =>
+              setViewMode({ 
+                type: 'subject', 
+                subjectId, 
+                classLevel: viewMode.classLevel || (subjectId.startsWith('class10-') ? 10 : 12),
+                subDiscipline
+              })
+            }
           />
         )}
 
@@ -213,7 +264,16 @@ export default function App() {
         {viewMode.type === 'subject' && currentSubject && (
           <ChapterListView
             subject={currentSubject}
-            onSelectChapter={(chapterId) => setViewMode({ type: 'chapter', subjectId: currentSubject.id, chapterId })}
+            language={language}
+            initialSubDiscipline={viewMode.subDiscipline}
+            onSelectChapter={(chapterId) =>
+              setViewMode({
+                type: 'chapter',
+                subjectId: currentSubject.id,
+                chapterId,
+                classLevel: viewMode.classLevel || currentSubject.classLevel || 12
+              })
+            }
             onBack={handleBack}
           />
         )}
@@ -226,14 +286,25 @@ export default function App() {
             initialTab={viewMode.initialTab || 'read'}
             language={language}
             onBack={handleBack}
-            onSelectVerifiedChapter={(sId, cId) => setViewMode({ type: 'chapter', subjectId: sId, chapterId: cId })}
+            onSelectVerifiedChapter={(sId, cId) =>
+              setViewMode({
+                type: 'chapter',
+                subjectId: sId,
+                chapterId: cId,
+                classLevel: viewMode.classLevel || currentSubject.classLevel || 12
+              })
+            }
           />
         )}
 
         {/* 5. PREVIOUS YEAR QUESTION BANK: YEARS (2010 - 2026) */}
         {viewMode.type === 'pyq-years' && (
           <PYQYearView
-            onSelectYear={(year) => setViewMode({ type: 'pyq-subjects', year })}
+            classLevel={viewMode.classLevel || 12}
+            language={language}
+            onSelectYear={(year) =>
+              setViewMode({ type: 'pyq-subjects', year, classLevel: viewMode.classLevel || 12 })
+            }
             onBack={handleBack}
           />
         )}
@@ -242,8 +313,17 @@ export default function App() {
         {viewMode.type === 'pyq-subjects' && (
           <PYQSubjectView
             year={viewMode.year}
-            subjects={SUBJECTS_DATA}
-            onSelectSubject={(subjectId) => setViewMode({ type: 'pyq-paper', year: viewMode.year, subjectId })}
+            classLevel={viewMode.classLevel || 12}
+            language={language}
+            subjects={viewMode.classLevel === 10 ? CLASS_10_SUBJECTS : CLASS_12_SUBJECTS}
+            onSelectSubject={(subjectId) =>
+              setViewMode({
+                type: 'pyq-paper',
+                year: viewMode.year,
+                subjectId,
+                classLevel: viewMode.classLevel || 12
+              })
+            }
             onBack={handleBack}
           />
         )}
@@ -253,9 +333,17 @@ export default function App() {
           <PYQPaperView
             year={viewMode.year}
             subject={currentSubject}
+            language={language}
             paper={getPaperForYearAndSubject(viewMode.year, currentSubject.id)}
             onBack={handleBack}
-            onSelectVerifiedPaper={(year, sId) => setViewMode({ type: 'pyq-paper', year, subjectId: sId })}
+            onSelectVerifiedPaper={(year, sId) =>
+              setViewMode({
+                type: 'pyq-paper',
+                year,
+                subjectId: sId,
+                classLevel: viewMode.classLevel || currentSubject.classLevel || 12
+              })
+            }
           />
         )}
 
@@ -284,11 +372,12 @@ export default function App() {
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
         subjects={SUBJECTS_DATA}
-        onNavigate={(subjectId, chapterId, tab) => {
+        language={language}
+        onNavigate={(subjectId, chapterId, tab, classLevel) => {
           if (chapterId) {
-            setViewMode({ type: 'chapter', subjectId, chapterId, initialTab: tab });
+            setViewMode({ type: 'chapter', subjectId, chapterId, initialTab: tab, classLevel });
           } else {
-            setViewMode({ type: 'subject', subjectId });
+            setViewMode({ type: 'subject', subjectId, classLevel });
           }
         }}
       />

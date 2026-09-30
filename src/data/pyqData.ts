@@ -1,10 +1,13 @@
 import { PYQPaper } from '../types';
 import { buildYearSubjectPaper } from './pyqRepository';
+import { generateClass10PYQPaper, CLASS10_PYQ_YEARS } from './class10/class10PYQRepository';
 
 export const PYQ_YEARS: number[] = [
   2026, 2025, 2024, 2023, 2022, 2021, 2020, 
   2019, 2018, 2017, 2016, 2015, 2014, 2013, 2012, 2011, 2010
 ];
+
+export { CLASS10_PYQ_YEARS };
 
 export const VERIFIED_PAPERS: PYQPaper[] = [
   {
@@ -333,6 +336,9 @@ export const VERIFIED_PAPERS: PYQPaper[] = [
 ];
 
 export function getPaperForYearAndSubject(year: number, subjectId: string): PYQPaper {
+  if (subjectId.startsWith('class10-')) {
+    return generateClass10PYQPaper(year, subjectId);
+  }
   // Always generate the complete, comprehensive paper with full Section A and Section B
   return buildYearSubjectPaper(year, subjectId);
 }
